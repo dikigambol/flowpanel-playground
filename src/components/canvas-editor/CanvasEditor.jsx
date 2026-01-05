@@ -247,6 +247,8 @@ function CanvasEditor() {
           selectElement(obj._polygonElement.id);
         } else if (obj._textElement) {
           selectElement(obj._textElement.id);
+        } else if (obj._imageElement) {
+          selectElement(obj._imageElement.id);
         }
       }
     });
@@ -258,6 +260,8 @@ function CanvasEditor() {
           selectElement(obj._polygonElement.id);
         } else if (obj._textElement) {
           selectElement(obj._textElement.id);
+        } else if (obj._imageElement) {
+          selectElement(obj._imageElement.id);
         }
       }
     });
@@ -345,8 +349,8 @@ function CanvasEditor() {
   }, []);
 
   // Handle add element
-  const handleAddElement = (type) => {
-    addElement(type);
+  const handleAddElement = (type, options = {}) => {
+    addElement(type, options);
   };
 
   // Handle update element properties

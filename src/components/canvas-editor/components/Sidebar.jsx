@@ -1,14 +1,34 @@
+import { useRef } from 'react';
 import { sidebarStyle, sidebarButtonStyle } from '../styles';
 
 /**
  * Sidebar - Menu komponen untuk menambah elemen ke canvas
  * 
  * @param {Object} props
- * @param {Function} props.onAddElement - Callback saat add element (type) => void
+ * @param {Function} props.onAddElement - Callback saat add element (type, options) => void
  * @param {boolean} props.collapsed - Whether sidebar is collapsed
  * @param {Function} props.onToggleCollapse - Toggle collapse callback
  */
 function Sidebar({ onAddElement, collapsed = true, onToggleCollapse }) {
+  const fileInputRef = useRef(null);
+
+  // Handle image file selection
+  const handleImageSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Create object URL for the image
+      const url = URL.createObjectURL(file);
+      onAddElement('image', { src: url });
+      
+      // Reset input so same file can be selected again
+      e.target.value = '';
+    }
+  };
+
+  // Trigger file picker
+  const handleAddImage = () => {
+    fileInputRef.current?.click();
+  };
   if (collapsed) {
     return (
       <div style={{
@@ -62,19 +82,23 @@ function Sidebar({ onAddElement, collapsed = true, onToggleCollapse }) {
         T
       </button>
 
-      {/* Future: Add Image */}
+      {/* Add Image */}
       <button
-        onClick={() => onAddElement('image')}
-        style={{
-          ...sidebarButtonStyle(false),
-          opacity: 0.5,
-          cursor: 'not-allowed',
-        }}
-        title="Add Image (Coming Soon)"
-        disabled
+        onClick={handleAddImage}
+        style={sidebarButtonStyle(false)}
+        title="Add Image"
       >
         🖼
       </button>
+
+      {/* Hidden file input for image selection */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleImageSelect}
+        style={{ display: 'none' }}
+      />
     </div>
   );
 }

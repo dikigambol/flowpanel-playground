@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
-import { createPolygonElement, createTextElement } from '../elements';
+import { createPolygonElement, createTextElement, createImageElement } from '../elements';
 
 /**
  * useCanvasEditor - Custom hook untuk state management canvas editor
@@ -108,7 +108,9 @@ export function useCanvasEditor() {
         });
         break;
 
-      // Future: case 'image': ...
+      case 'image':
+        // Image is async, handle separately
+        return addImageElement(canvas, canvasCenter, offset, options);
 
       default:
         console.error(`Unknown element type: ${type}`);
@@ -133,9 +135,69 @@ export function useCanvasEditor() {
         element.selectPolygon();
       } else if (element.type === 'text') {
         element.selectText();
+      } else if (element.type === 'image') {
+        element.selectImage();
       }
 
       return element;
+    }
+
+    return null;
+  }, []);
+
+  /**
+   * Add image element (async)
+   * @param {Canvas} canvas - Fabric canvas
+   * @param {Object} canvasCenter - Center position
+   * @param {number} offset - Offset for stacking
+   * @param {Object} options - Element options
+   */
+  const addImageElement = useCallback(async (canvas, canvasCenter, offset, options) => {
+    if (!options.src) {
+      console.error('Image src is required');
+      return null;
+    }
+
+    try {
+      const element = await createImageElement(canvas, {
+        src: options.src,
+        left: options.left || canvasCenter.x - 100 + offset,
+        top: options.top || canvasCenter.y - 100 + offset,
+        opacity: options.opacity !== undefined ? options.opacity : 1,
+        flipX: options.flipX || false,
+        flipY: options.flipY || false,
+        scaleX: options.scaleX || 1,
+        scaleY: options.scaleY || 1,
+        onSelect: (el) => {
+          setSelectedElementId(el.id);
+        },
+        onUpdate: (el) => {
+          // Trigger re-render when element updates
+          setElements(prev => [...prev]);
+        },
+        onDelete: (el) => {
+          removeElementFromState(el.id);
+        },
+      });
+
+      if (element) {
+        // Store in map
+        elementsMapRef.current.set(element.id, element);
+
+        // Update state
+        setElements(prev => [...prev, {
+          id: element.id,
+          type: element.type,
+        }]);
+
+        // Select new element
+        setSelectedElementId(element.id);
+        element.selectImage();
+
+        return element;
+      }
+    } catch (error) {
+      console.error('Failed to add image element:', error);
     }
 
     return null;

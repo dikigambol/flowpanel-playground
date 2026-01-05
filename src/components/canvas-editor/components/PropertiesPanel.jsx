@@ -9,6 +9,7 @@ import {
 } from '../styles';
 import PolygonProperties from './PolygonProperties';
 import TextProperties from './TextProperties';
+import ImageProperties from './ImageProperties';
 
 /**
  * PropertiesPanel - Panel untuk mengedit properties elemen yang dipilih
@@ -125,6 +126,13 @@ function PropertiesPanel({ element, onUpdate, onDelete }) {
           properties={properties}
           onPropertyChange={handlePropertyChange}
           onToggleFontStyle={toggleFontStyle}
+        />
+      )}
+      {element.type === 'image' && (
+        <ImageProperties
+          properties={properties}
+          onPropertyChange={handlePropertyChange}
+          onResetSize={() => element.resetSize?.()}
         />
       )}
 
