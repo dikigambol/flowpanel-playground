@@ -21,6 +21,7 @@ function EditableBaseShape() {
   const edgeLinesRef = useRef([]);
   const selectedNodeIndexRef = useRef(null);
   const editModeRef = useRef(false);
+  const canvasContainerRef = useRef(null);
   
   // State untuk kontrol UI
   const [fillColor, setFillColor] = useState('#3b82f6');
@@ -366,18 +367,70 @@ function EditableBaseShape() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Inisialisasi canvas
+  // Inisialisasi canvas dan ResizeObserver
   useEffect(() => {
     if (canvasInstanceRef.current) return;
 
     const canvas = new Canvas(canvasRef.current, {
-      width: 800,
-      height: 500,
       backgroundColor: '#1a1a2e',
       selection: false,
     });
 
     canvasInstanceRef.current = canvas;
+
+    // Resize Canvas to fill container
+    const resizeCanvas = () => {
+      if (canvasContainerRef.current && canvasInstanceRef.current) {
+        const { clientWidth, clientHeight } = canvasContainerRef.current;
+        canvasInstanceRef.current.setDimensions({ width: clientWidth, height: clientHeight });
+        canvasInstanceRef.current.requestRenderAll();
+      }
+    };
+
+    // Initial resize
+    resizeCanvas();
+
+    // ResizeObserver untuk menyesuaikan canvas dengan ukuran container
+    const resizeObserver = new ResizeObserver(resizeCanvas);
+    if (canvasContainerRef.current) {
+      resizeObserver.observe(canvasContainerRef.current);
+    }
+
+    // Event untuk double-click di canvas (bukan object) untuk add node
+    canvas.on('mouse:dblclick', (opt) => {
+      if (!editModeRef.current) return;
+      if (opt.target) return; // Jangan add jika klik pada object
+      
+      const pointer = canvas.getPointer(opt.e);
+      const points = pointsRef.current;
+      
+      // Find nearest edge
+      let minDist = Infinity;
+      let nearestEdge = 0;
+      
+      for (let i = 0; i < points.length; i++) {
+        const p1 = points[i];
+        const p2 = points[(i + 1) % points.length];
+        const dist = pointToSegmentDistance(pointer.x, pointer.y, p1.x, p1.y, p2.x, p2.y);
+        if (dist < minDist) {
+          minDist = dist;
+          nearestEdge = i;
+        }
+      }
+      
+      // Threshold untuk add node (misal 20px)
+      if (minDist < 20) {
+        addNodeAtEdge(nearestEdge);
+      } else {
+        // Jika tidak dekat edge manapun, tambahkan di posisi klik sebagai titik baru
+        pointsRef.current.push({ x: pointer.x, y: pointer.y });
+        rebuildPolygon(true);
+        createEdgeLines();
+        createNodes();
+        selectedNodeIndexRef.current = pointsRef.current.length - 1;
+        highlightSelectedNode();
+      }
+    });
 
     // Initial polygon
     rebuildPolygon(false);
@@ -385,31 +438,79 @@ function EditableBaseShape() {
     return () => {
       canvas.dispose();
       canvasInstanceRef.current = null;
+      resizeObserver.disconnect();
     };
   }, []);
 
+  // Helper: jarak titik ke segment garis
+  const pointToSegmentDistance = (px, py, x1, y1, x2, y2) => {
+    const A = px - x1;
+    const B = py - y1;
+    const C = x2 - x1;
+    const D = y2 - y1;
+
+    const dot = A * C + B * D;
+    const lenSq = C * C + D * D;
+    let param = lenSq !== 0 ? dot / lenSq : -1;
+
+    let xx, yy;
+    if (param < 0) {
+      xx = x1; yy = y1;
+    } else if (param > 1) {
+      xx = x2; yy = y2;
+    } else {
+      xx = x1 + param * C;
+      yy = y1 + param * D;
+    }
+
+    return Math.sqrt((px - xx) ** 2 + (py - yy) ** 2);
+  };
+
   // ========== STYLES ==========
-  const containerStyle = {
-    padding: '20px',
+  const mainContainerStyle = {
+    display: 'flex',
+    height: '100vh',
+    width: '100vw',
+    overflow: 'hidden',
     fontFamily: "'Segoe UI', system-ui, sans-serif",
     backgroundColor: '#0f0f23',
-    minHeight: '100vh',
-    width: '100%',
     color: '#e0e0e0',
   };
 
-  const headerStyle = {
-    marginBottom: '20px',
-    color: '#60a5fa',
-    fontSize: '24px',
-    fontWeight: '600',
+  const canvasWrapperStyle = {
+    flexGrow: 1,
+    position: 'relative',
+    backgroundColor: '#1a1a2e',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
   };
 
-  const panelStyle = {
+  const canvasStyle = {
+    border: '2px solid #3b82f6',
+    borderRadius: '12px',
+    boxShadow: '0 4px 20px rgba(59, 130, 246, 0.3)',
+  };
+
+  const drawerStyle = {
+    width: '300px',
+    minWidth: '300px',
+    backgroundColor: '#15152a',
+    borderLeft: '1px solid #2a2a4a',
+    padding: '20px',
+    overflowY: 'auto',
     display: 'flex',
-    gap: '15px',
-    marginBottom: '20px',
-    flexWrap: 'wrap',
+    flexDirection: 'column',
+    gap: '25px',
+  };
+
+  const headerStyle = {
+    color: '#60a5fa',
+    fontSize: '22px',
+    fontWeight: '600',
+    borderBottom: '1px solid #2a2a4a',
+    paddingBottom: '15px',
+    marginBottom: '10px',
   };
 
   const controlGroupStyle = {
@@ -419,7 +520,6 @@ function EditableBaseShape() {
     padding: '15px',
     backgroundColor: '#1e1e3f',
     borderRadius: '8px',
-    minWidth: '160px',
   };
 
   const labelStyle = {
@@ -468,12 +568,25 @@ function EditableBaseShape() {
     cursor: 'pointer',
   };
 
+  const instructionsStyle = {
+    padding: '15px',
+    backgroundColor: '#1e1e3f',
+    borderRadius: '8px',
+    fontSize: '13px',
+    lineHeight: '1.8',
+  };
+
   return (
-    <div style={containerStyle}>
-      <h1 style={headerStyle}>🔷 Polygon Shape Editor</h1>
-      
-      {/* Control Panel */}
-      <div style={panelStyle}>
+    <div style={mainContainerStyle}>
+      {/* Canvas Area */}
+      <div ref={canvasContainerRef} style={canvasWrapperStyle}>
+        <canvas ref={canvasRef} style={canvasStyle} />
+      </div>
+
+      {/* Properties Drawer */}
+      <div style={drawerStyle}>
+        <h1 style={headerStyle}>🔷 Polygon Editor</h1>
+        
         {/* Fill Color */}
         <div style={controlGroupStyle}>
           <span style={labelStyle}>Fill Color</span>
@@ -543,7 +656,7 @@ function EditableBaseShape() {
         </div>
 
         {/* Delete Node Button */}
-        {editMode && (
+        {editMode && selectedNodeIndexRef.current !== null && (
           <div style={controlGroupStyle}>
             <span style={labelStyle}>Actions</span>
             <button
@@ -553,51 +666,27 @@ function EditableBaseShape() {
               🗑 Delete Node
             </button>
             <span style={{ fontSize: '11px', color: '#94a3b8' }}>
-              or press Delete key
+              Selected Node: {selectedNodeIndexRef.current + 1}
             </span>
           </div>
         )}
-      </div>
 
-      {/* Canvas */}
-      <canvas 
-        ref={canvasRef} 
-        style={{ 
-          border: '2px solid #3b82f6', 
-          borderRadius: '12px',
-          display: 'block',
-          boxShadow: '0 4px 20px rgba(59, 130, 246, 0.3)',
-        }} 
-      />
-
-      {/* Instructions */}
-      <div style={{ 
-        marginTop: '20px', 
-        padding: '15px',
-        backgroundColor: '#1e1e3f',
-        borderRadius: '8px',
-        fontSize: '13px',
-        lineHeight: '1.8',
-      }}>
-        <strong style={{ color: '#60a5fa', fontSize: '14px' }}>📌 Cara Pakai:</strong>
-        <div style={{ marginTop: '10px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-          <div>
-            <strong style={{ color: '#22c55e' }}>Normal Mode:</strong>
-            <ul style={{ marginTop: '5px', paddingLeft: '20px', color: '#94a3b8' }}>
-              <li>Drag polygon untuk pindah</li>
-              <li>Gunakan handles untuk resize/rotate</li>
-            </ul>
-          </div>
-          <div>
-            <strong style={{ color: '#ef4444' }}>Edit Mode:</strong>
-            <ul style={{ marginTop: '5px', paddingLeft: '20px', color: '#94a3b8' }}>
-              <li><strong>Drag node merah</strong> → pindahkan titik</li>
-              <li><strong>Double-click garis biru</strong> → tambah node</li>
-              <li><strong>Klik node + Delete</strong> → hapus node</li>
-              <li>Node hijau = terpilih</li>
-            </ul>
-          </div>
+        {/* Instructions */}
+        <div style={instructionsStyle}>
+          <strong style={{ color: '#60a5fa', fontSize: '14px' }}>📌 Cara Pakai:</strong>
+          <ul style={{ marginTop: '10px', paddingLeft: '20px', color: '#94a3b8', listStyle: 'disc' }}>
+            <li><strong>Normal Mode:</strong> Drag polygon untuk pindah, handles untuk resize/rotate</li>
+            <li><strong>Edit Mode:</strong>
+              <ul style={{ marginTop: '5px', paddingLeft: '20px', listStyle: 'circle' }}>
+                <li><strong>Drag node merah</strong> → pindahkan titik</li>
+                <li><strong>Double-click garis biru</strong> → tambah node baru di edge</li>
+                <li><strong>Double-click di area kosong</strong> → tambah node baru di posisi klik</li>
+                <li><strong>Pilih node (jadi hijau) + Delete/Backspace</strong> → hapus node</li>
+              </ul>
+            </li>
+          </ul>
         </div>
+
       </div>
     </div>
   );
