@@ -1,7 +1,20 @@
 // Styles for EditableBaseShape component
 
 export const canvasWrapperStyle = {
+  position: 'fixed',
+  top: 0,
+  left: 0,
+  width: '100vw',
   height: '100vh',
+  margin: 0,
+  padding: 0,
+  backgroundColor: '#1a1a2e',
+};
+
+export const canvasStyle = {
+  width: '100%',
+  height: '100%',
+  display: 'block',
 };
 
 export const drawerStyle = {

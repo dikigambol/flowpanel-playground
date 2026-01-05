@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Canvas, Polygon, Circle, Line, util as fabricUtil } from 'fabric';
-import { canvasWrapperStyle, drawerStyle, headerStyle, controlGroupStyle, labelStyle, inputRowStyle, colorInputStyle, rangeStyle, buttonStyle, checkboxStyle } from './style.js';
+import { canvasWrapperStyle, canvasStyle, drawerStyle, headerStyle, controlGroupStyle, labelStyle, inputRowStyle, colorInputStyle, rangeStyle, buttonStyle, checkboxStyle } from './style.js';
 
 /**
  * EditableBaseShape Component
@@ -33,6 +33,14 @@ function EditableBaseShape() {
   const [nodeCount, setNodeCount] = useState(4);
   const [showDrawer, setShowDrawer] = useState(false);
 
+  // Grid, pan, zoom states
+  const [gridOn, setGridOn] = useState(true);
+  const [zoomLevel, setZoomLevel] = useState(1);
+
+  const isDraggingRef = useRef(false);
+  const lastPosRef = useRef({ x: 0, y: 0 });
+  const baseGridSpacingRef = useRef(50); // in world units (px)
+
   // Points disimpan sebagai absolute coordinates
   const pointsRef = useRef([
     { x: 200, y: 150 },
@@ -45,6 +53,13 @@ function EditableBaseShape() {
   useEffect(() => {
     editModeRef.current = editMode;
   }, [editMode]);
+
+  // Redraw canvas when grid changes
+  useEffect(() => {
+    if (canvasInstanceRef.current) {
+      canvasInstanceRef.current.renderAll();
+    }
+  }, [gridOn]);
 
   // Helper: Clear all nodes from canvas
   const clearNodes = () => {
@@ -68,6 +83,87 @@ function EditableBaseShape() {
       canvas.remove(line);
     });
     edgeLinesRef.current = [];
+  };
+
+  // Helper: Draw grid on canvas
+  const drawGrid = () => {
+    const canvas = canvasInstanceRef.current;
+    if (!canvas || !gridOn) return;
+
+    const ctx = canvas.getContext('2d');
+    const zoom = canvas.getZoom();
+    const vpt = canvas.viewportTransform;
+
+    // Calculate visible area
+    const canvasWidth = canvas.width;
+    const canvasHeight = canvas.height;
+
+    // Transform viewport to world coordinates
+    const startX = -vpt[4] / zoom;
+    const startY = -vpt[5] / zoom;
+    const endX = startX + canvasWidth / zoom;
+    const endY = startY + canvasHeight / zoom;
+
+    ctx.save();
+    ctx.strokeStyle = '#374151';
+    ctx.lineWidth = 1 / zoom;
+    ctx.setLineDash([2 / zoom, 2 / zoom]);
+
+    // Vertical lines
+    for (let x = Math.floor(startX / baseGridSpacingRef.current) * baseGridSpacingRef.current; x <= endX; x += baseGridSpacingRef.current) {
+      const screenX = (x - startX) * zoom;
+      ctx.beginPath();
+      ctx.moveTo(screenX, 0);
+      ctx.lineTo(screenX, canvasHeight);
+      ctx.stroke();
+    }
+
+    // Horizontal lines
+    for (let y = Math.floor(startY / baseGridSpacingRef.current) * baseGridSpacingRef.current; y <= endY; y += baseGridSpacingRef.current) {
+      const screenY = (y - startY) * zoom;
+      ctx.beginPath();
+      ctx.moveTo(0, screenY);
+      ctx.lineTo(canvasWidth, screenY);
+      ctx.stroke();
+    }
+
+    ctx.restore();
+  };
+
+  // Helper: Fit view to show all objects
+  const fitView = () => {
+    const canvas = canvasInstanceRef.current;
+    if (!canvas) return;
+
+    const objects = canvas.getObjects().filter(obj => obj !== polygonRef.current || !editModeRef.current);
+    if (objects.length === 0) return;
+
+    // Calculate bounding box of all objects
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    objects.forEach(obj => {
+      const bounds = obj.getBoundingRect();
+      minX = Math.min(minX, bounds.left);
+      minY = Math.min(minY, bounds.top);
+      maxX = Math.max(maxX, bounds.left + bounds.width);
+      maxY = Math.max(maxY, bounds.top + bounds.height);
+    });
+
+    const width = maxX - minX;
+    const height = maxY - minY;
+    const centerX = (minX + maxX) / 2;
+    const centerY = (minY + maxY) / 2;
+
+    // Calculate zoom to fit
+    const canvasWidth = canvas.width;
+    const canvasHeight = canvas.height;
+    const zoomX = canvasWidth / width;
+    const zoomY = canvasHeight / height;
+    const zoom = Math.min(zoomX, zoomY) * 0.8; // 80% to add some padding
+
+    canvas.setZoom(Math.max(0.1, Math.min(3, zoom)));
+    canvas.absolutePan({ x: centerX * zoom - canvasWidth / 2, y: centerY * zoom - canvasHeight / 2 });
+    setZoomLevel(canvas.getZoom());
+    canvas.requestRenderAll();
   };
 
   // Helper: Get absolute vertex coordinates of a transformed polygon
@@ -444,6 +540,47 @@ function EditableBaseShape() {
       createNodes();
     });
 
+    // Pan functionality (always active, but not when clicking objects)
+    canvas.on('mouse:down', (opt) => {
+      // Don't pan if clicking on an object
+      if (opt.target) return;
+      
+      const evt = opt.e;
+      isDraggingRef.current = true;
+      lastPosRef.current = { x: evt.clientX, y: evt.clientY };
+      canvas.selection = false;
+    });
+
+    canvas.on('mouse:move', (opt) => {
+      if (!isDraggingRef.current) return;
+      const evt = opt.e;
+      const deltaX = evt.clientX - lastPosRef.current.x;
+      const deltaY = evt.clientY - lastPosRef.current.y;
+      canvas.relativePan({ x: deltaX, y: deltaY });
+      lastPosRef.current = { x: evt.clientX, y: evt.clientY };
+      canvas.requestRenderAll();
+    });
+
+    canvas.on('mouse:up', () => {
+      isDraggingRef.current = false;
+      canvas.selection = true;
+    });
+
+    // Zoom functionality
+    canvas.on('mouse:wheel', (opt) => {
+      const delta = opt.e.deltaY;
+      let zoom = canvas.getZoom();
+      zoom *= 0.999 ** delta;
+      zoom = Math.max(0.1, Math.min(3, zoom)); // Limit zoom between 0.1 and 3
+      canvas.zoomToPoint({ x: opt.e.offsetX, y: opt.e.offsetY }, zoom);
+      setZoomLevel(zoom);
+      opt.e.preventDefault();
+      opt.e.stopPropagation();
+    });
+
+    // Draw grid after render
+    canvas.on('after:render', drawGrid);
+
     // Initial polygon
     rebuildPolygon(false);
 
@@ -458,7 +595,7 @@ function EditableBaseShape() {
     <div>
       {/* Canvas Area */}
       <div ref={canvasContainerRef} style={canvasWrapperStyle}>
-        <canvas ref={canvasRef} />
+        <canvas ref={canvasRef} style={canvasStyle} />
       </div>
 
       {/* Properties Drawer */}
@@ -531,6 +668,29 @@ function EditableBaseShape() {
           <span style={{ fontSize: '11px', color: '#94a3b8' }}>
             Nodes: {nodeCount}
           </span>
+        </div>
+
+        {/* Canvas Controls */}
+        <div style={controlGroupStyle}>
+          <span style={labelStyle}>Canvas</span>
+          <div style={inputRowStyle}>
+            <input
+              type="checkbox"
+              checked={gridOn}
+              onChange={(e) => setGridOn(e.target.checked)}
+              style={checkboxStyle}
+            />
+            <span style={{ fontSize: '12px', color: '#cbd5e1' }}>Grid</span>
+          </div>
+          <div style={inputRowStyle}>
+            <span style={{ fontSize: '12px', color: '#cbd5e1' }}>Zoom: {(zoomLevel * 100).toFixed(0)}%</span>
+          </div>
+          <button
+            onClick={fitView}
+            style={buttonStyle(false)}
+          >
+            📐 Fit View
+          </button>
         </div>
 
         {/* Delete Node Button */}
