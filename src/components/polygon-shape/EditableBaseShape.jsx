@@ -596,6 +596,50 @@ function EditableBaseShape() {
       {/* Canvas Area */}
       <div ref={canvasContainerRef} style={canvasWrapperStyle}>
         <canvas ref={canvasRef} style={canvasStyle} />
+        
+        {/* Floating Controls */}
+        <div style={{
+          position: 'absolute',
+          top: '10px',
+          left: '10px',
+          backgroundColor: 'rgba(15, 23, 42, 0.9)',
+          borderRadius: '8px',
+          padding: '6px 12px',
+          display: 'flex',
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: '12px',
+          zIndex: 1000,
+          backdropFilter: 'blur(8px)',
+          border: '1px solid rgba(71, 85, 105, 0.3)',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <input
+              type="checkbox"
+              checked={gridOn}
+              onChange={(e) => setGridOn(e.target.checked)}
+              style={{ ...checkboxStyle, margin: 0 }}
+            />
+            <span style={{ fontSize: '12px', color: '#cbd5e1', margin: 0 }}>Grid</span>
+          </div>
+          
+          <div style={{ fontSize: '11px', color: '#94a3b8', minWidth: '40px', textAlign: 'center' }}>
+            {(zoomLevel * 100).toFixed(0)}%
+          </div>
+          
+          <button
+            onClick={fitView}
+            style={{ 
+              ...buttonStyle(false), 
+              padding: '4px 8px', 
+              fontSize: '11px',
+              minWidth: 'auto',
+              margin: 0
+            }}
+          >
+            📐 Fit
+          </button>
+        </div>
       </div>
 
       {/* Properties Drawer */}
@@ -668,29 +712,6 @@ function EditableBaseShape() {
           <span style={{ fontSize: '11px', color: '#94a3b8' }}>
             Nodes: {nodeCount}
           </span>
-        </div>
-
-        {/* Canvas Controls */}
-        <div style={controlGroupStyle}>
-          <span style={labelStyle}>Canvas</span>
-          <div style={inputRowStyle}>
-            <input
-              type="checkbox"
-              checked={gridOn}
-              onChange={(e) => setGridOn(e.target.checked)}
-              style={checkboxStyle}
-            />
-            <span style={{ fontSize: '12px', color: '#cbd5e1' }}>Grid</span>
-          </div>
-          <div style={inputRowStyle}>
-            <span style={{ fontSize: '12px', color: '#cbd5e1' }}>Zoom: {(zoomLevel * 100).toFixed(0)}%</span>
-          </div>
-          <button
-            onClick={fitView}
-            style={buttonStyle(false)}
-          >
-            📐 Fit View
-          </button>
         </div>
 
         {/* Delete Node Button */}
