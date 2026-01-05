@@ -37,10 +37,15 @@ function EditableBaseShape() {
   // Grid, pan, zoom states
   const [gridOn, setGridOn] = useState(true);
   const [zoomLevel, setZoomLevel] = useState(1);
+  const [activeTool, setActiveTool] = useState('select'); // 'select' atau 'pan'
 
   const isDraggingRef = useRef(false);
   const lastPosRef = useRef({ x: 0, y: 0 });
   const baseGridSpacingRef = useRef(50); // in world units (px)
+
+  // Ref untuk tool - langsung sync tanpa useEffect agar selalu up-to-date
+  const activeToolRef = useRef(activeTool);
+  activeToolRef.current = activeTool; // Selalu sync setiap render
 
   // Points disimpan sebagai absolute coordinates
   const pointsRef = useRef([
@@ -256,12 +261,19 @@ function EditableBaseShape() {
     canvas.add(polygon);
     canvas.sendObjectToBack(polygon);
 
-    if (!isEditMode) {
-      canvas.setActiveObject(polygon);
-    }
-
     canvas.requestRenderAll();
     setNodeCount(currentPoints.length);
+  };
+
+  // Select polygon dan show drawer
+  const selectPolygon = () => {
+    const canvas = canvasInstanceRef.current;
+    const polygon = polygonRef.current;
+    if (!canvas || !polygon) return;
+    
+    canvas.setActiveObject(polygon);
+    setShowDrawer(true);
+    canvas.requestRenderAll();
   };
 
   // Create edge lines
@@ -457,7 +469,8 @@ function EditableBaseShape() {
     editModeRef.current = newEditMode;
 
     if (newEditMode) {
-      // Masuk edit mode
+      // Masuk edit mode - deselect polygon dulu
+      canvas.discardActiveObject();
       selectedNodeIndexRef.current = null;
       const currentPolygon = polygonRef.current;
       if (currentPolygon) {
@@ -466,12 +479,16 @@ function EditableBaseShape() {
       rebuildPolygon(true);
       createEdgeLines();
       createNodes();
+      // Drawer tetap tampil saat edit mode
+      setShowDrawer(true);
     } else {
       // Keluar edit mode
       clearNodes();
       clearEdgeLines();
       selectedNodeIndexRef.current = null;
       rebuildPolygon(false);
+      // Select polygon kembali setelah keluar edit mode
+      selectPolygon();
     }
   };
 
@@ -485,6 +502,17 @@ function EditableBaseShape() {
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e) => {
+      // Tool switching shortcuts (always active)
+      if (e.key === 'v' || e.key === 'V') {
+        setActiveTool('select');
+        return;
+      }
+      if (e.key === 'h' || e.key === 'H') {
+        setActiveTool('pan');
+        return;
+      }
+
+      // Edit mode shortcuts
       if (!editModeRef.current) return;
 
       if (e.key === 'Delete' || e.key === 'Backspace') {
@@ -543,6 +571,22 @@ function EditableBaseShape() {
       resizeObserver.observe(canvasContainerRef.current);
     }
 
+    // Event untuk selection changes
+    canvas.on('selection:created', (e) => {
+      // Hanya show drawer jika yang di-select adalah polygon utama
+      if (e.selected && e.selected.includes(polygonRef.current)) {
+        setShowDrawer(true);
+      }
+    });
+
+    canvas.on('selection:cleared', () => {
+      // Jangan hide drawer atau exit edit mode jika sedang dalam edit mode
+      // karena di edit mode, polygon tidak selectable
+      if (!editModeRef.current) {
+        setShowDrawer(false);
+      }
+    });
+
     // Event untuk double-click di canvas (bukan object) untuk add node
     canvas.on('mouse:dblclick', (opt) => {
       if (!editModeRef.current) return;
@@ -559,10 +603,17 @@ function EditableBaseShape() {
       createNodes();
     });
 
-    // Pan functionality (always active, but not when clicking objects)
+    // Pan functionality (only active when pan tool is selected)
     canvas.on('mouse:down', (opt) => {
-      // Don't pan if clicking on an object
-      if (opt.target) return;
+      // Hanya pan jika tool pan aktif DAN tidak klik object
+      if (activeToolRef.current !== 'pan') {
+        isDraggingRef.current = false;
+        return;
+      }
+      if (opt.target) {
+        isDraggingRef.current = false;
+        return;
+      }
       
       const evt = opt.e;
       isDraggingRef.current = true;
@@ -571,7 +622,11 @@ function EditableBaseShape() {
     });
 
     canvas.on('mouse:move', (opt) => {
-      if (!isDraggingRef.current) return;
+      // Double check: hanya pan jika isDragging DAN tool pan aktif
+      if (!isDraggingRef.current || activeToolRef.current !== 'pan') {
+        return;
+      }
+      
       const evt = opt.e;
       const deltaX = evt.clientX - lastPosRef.current.x;
       const deltaY = evt.clientY - lastPosRef.current.y;
@@ -599,8 +654,12 @@ function EditableBaseShape() {
       opt.e.stopPropagation();
     });
 
-    // Initial polygon
+    // Initial polygon dan select
     rebuildPolygon(false);
+    // Select polygon setelah dibuat (delayed agar canvas siap)
+    setTimeout(() => {
+      selectPolygon();
+    }, 100);
 
     return () => {
       canvas.dispose();
@@ -653,6 +712,42 @@ function EditableBaseShape() {
           backdropFilter: 'blur(8px)',
           border: '1px solid rgba(71, 85, 105, 0.3)',
         }}>
+          {/* Tool Buttons */}
+          <div style={{ display: 'flex', gap: '4px', borderRight: '1px solid rgba(71, 85, 105, 0.5)', paddingRight: '12px' }}>
+            <button
+              onClick={() => setActiveTool('select')}
+              title="Select Tool (V)"
+              style={{
+                padding: '6px 10px',
+                fontSize: '14px',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                backgroundColor: activeTool === 'select' ? '#3b82f6' : 'transparent',
+                color: activeTool === 'select' ? '#ffffff' : '#94a3b8',
+                transition: 'all 0.15s',
+              }}
+            >
+              ↖
+            </button>
+            <button
+              onClick={() => setActiveTool('pan')}
+              title="Pan Tool (H)"
+              style={{
+                padding: '6px 10px',
+                fontSize: '14px',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                backgroundColor: activeTool === 'pan' ? '#3b82f6' : 'transparent',
+                color: activeTool === 'pan' ? '#ffffff' : '#94a3b8',
+                transition: 'all 0.15s',
+              }}
+            >
+              ✋
+            </button>
+          </div>
+
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <input
               type="checkbox"
@@ -660,7 +755,7 @@ function EditableBaseShape() {
               onChange={(e) => setGridOn(e.target.checked)}
               style={{ ...checkboxStyle, margin: 0 }}
             />
-            <span style={{ fontSize: '12px', color: '#cbd5e1', margin: 0 }}>Grid</span>
+            <span style={{ fontSize: '11px', color: '#cbd5e1', margin: 0 }}>Grid</span>
           </div>
           
           <div style={{ fontSize: '11px', color: '#94a3b8', minWidth: '40px', textAlign: 'center' }}>
@@ -683,93 +778,100 @@ function EditableBaseShape() {
       </div>
 
       {/* Properties Drawer */}
-      <div style={drawerStyle}>
-        <h1 style={headerStyle}>🔷 Polygon Editor</h1>
+      {showDrawer && (
+        <div style={{
+          ...drawerStyle,
+          opacity: showDrawer ? 1 : 0,
+          transform: showDrawer ? 'translateX(0)' : 'translateX(20px)',
+          transition: 'opacity 0.2s ease, transform 0.2s ease',
+        }}>
+          <h1 style={headerStyle}>🔷 Polygon Editor</h1>
 
-        {/* Fill Color */}
-        <div style={controlGroupStyle}>
-          <span style={labelStyle}>Fill Color</span>
-          <div style={inputRowStyle}>
-            <input
-              type="color"
-              value={fillColor}
-              onChange={(e) => setFillColor(e.target.value)}
-              style={colorInputStyle}
-            />
-            <span style={{ fontSize: '12px', color: '#cbd5e1' }}>{fillColor}</span>
-          </div>
-        </div>
-
-        {/* Border Controls */}
-        <div style={controlGroupStyle}>
-          <span style={labelStyle}>Border</span>
-          <div style={inputRowStyle}>
-            <input
-              type="checkbox"
-              checked={hasBorder}
-              onChange={(e) => setHasBorder(e.target.checked)}
-              style={checkboxStyle}
-            />
-            <span style={{ fontSize: '12px', color: '#cbd5e1' }}>
-              {hasBorder ? 'On' : 'Off'}
-            </span>
-          </div>
-          {hasBorder && (
-            <>
-              <div style={inputRowStyle}>
-                <input
-                  type="color"
-                  value={strokeColor}
-                  onChange={(e) => setStrokeColor(e.target.value)}
-                  style={colorInputStyle}
-                />
-                <span style={{ fontSize: '12px', color: '#cbd5e1' }}>{strokeColor}</span>
-              </div>
-              <div style={inputRowStyle}>
-                <input
-                  type="range"
-                  min="1"
-                  max="15"
-                  value={strokeWidth}
-                  onChange={(e) => setStrokeWidth(Number(e.target.value))}
-                  style={rangeStyle}
-                />
-                <span style={{ fontSize: '12px', color: '#cbd5e1' }}>{strokeWidth}px</span>
-              </div>
-            </>
-          )}
-        </div>
-
-        {/* Edit Mode */}
-        <div style={controlGroupStyle}>
-          <span style={labelStyle}>Edit Nodes</span>
-          <button
-            onClick={toggleEditMode}
-            style={buttonStyle(editMode)}
-          >
-            {editMode ? '✓ Done Editing' : '✎ Edit Shape'}
-          </button>
-          <span style={{ fontSize: '11px', color: '#94a3b8' }}>
-            Nodes: {nodeCount}
-          </span>
-        </div>
-
-        {/* Delete Node Button */}
-        {editMode && selectedNodeIndexRef.current !== null && (
+          {/* Fill Color */}
           <div style={controlGroupStyle}>
-            <span style={labelStyle}>Actions</span>
+            <span style={labelStyle}>Fill Color</span>
+            <div style={inputRowStyle}>
+              <input
+                type="color"
+                value={fillColor}
+                onChange={(e) => setFillColor(e.target.value)}
+                style={colorInputStyle}
+              />
+              <span style={{ fontSize: '11px', color: '#cbd5e1' }}>{fillColor}</span>
+            </div>
+          </div>
+
+          {/* Border Controls */}
+          <div style={controlGroupStyle}>
+            <span style={labelStyle}>Border</span>
+            <div style={inputRowStyle}>
+              <input
+                type="checkbox"
+                checked={hasBorder}
+                onChange={(e) => setHasBorder(e.target.checked)}
+                style={checkboxStyle}
+              />
+              <span style={{ fontSize: '11px', color: '#cbd5e1' }}>
+                {hasBorder ? 'On' : 'Off'}
+              </span>
+            </div>
+            {hasBorder && (
+              <>
+                <div style={inputRowStyle}>
+                  <input
+                    type="color"
+                    value={strokeColor}
+                    onChange={(e) => setStrokeColor(e.target.value)}
+                    style={colorInputStyle}
+                  />
+                  <span style={{ fontSize: '11px', color: '#cbd5e1' }}>{strokeColor}</span>
+                </div>
+                <div style={inputRowStyle}>
+                  <input
+                    type="range"
+                    min="1"
+                    max="15"
+                    value={strokeWidth}
+                    onChange={(e) => setStrokeWidth(Number(e.target.value))}
+                    style={rangeStyle}
+                  />
+                  <span style={{ fontSize: '11px', color: '#cbd5e1' }}>{strokeWidth}px</span>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Edit Mode */}
+          <div style={controlGroupStyle}>
+            <span style={labelStyle}>Edit Nodes</span>
             <button
-              onClick={deleteSelectedNode}
-              style={buttonStyle(false, '#ef4444')}
+              onClick={toggleEditMode}
+              style={buttonStyle(editMode)}
             >
-              🗑 Delete Node
+              {editMode ? '✓ Done Editing' : '✎ Edit Shape'}
             </button>
             <span style={{ fontSize: '11px', color: '#94a3b8' }}>
-              Selected Node: {selectedNodeIndexRef.current + 1}
+              Nodes: {nodeCount}
             </span>
           </div>
-        )}
-      </div>
+
+          {/* Delete Node Button */}
+          {editMode && selectedNodeIndexRef.current !== null && (
+            <div style={controlGroupStyle}>
+              <span style={labelStyle}>Actions</span>
+              <button
+                onClick={deleteSelectedNode}
+                style={buttonStyle(false, '#ef4444')}
+              >
+                🗑 Delete Node
+              </button>
+              <span style={{ fontSize: '11px', color: '#94a3b8' }}>
+                Selected Node: {selectedNodeIndexRef.current + 1}
+              </span>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

@@ -21,15 +21,15 @@ export const drawerStyle = {
   position: 'absolute',
   top: '20px',
   right: '20px',
-  width: '300px',
+  width: '250px',
   backgroundColor: '#15152a',
   border: '1px solid #2a2a4a',
   borderRadius: '12px',
-  padding: '20px',
+  padding: '15px',
   overflowY: 'auto',
   display: 'flex',
   flexDirection: 'column',
-  gap: '25px',
+  gap: '15px',
   zIndex: 10,
   boxShadow: '0 4px 20px rgba(0, 0, 0, 0.5)',
   fontFamily: "'Segoe UI', system-ui, sans-serif",
@@ -37,24 +37,24 @@ export const drawerStyle = {
 
 export const headerStyle = {
   color: '#60a5fa',
-  fontSize: '22px',
+  fontSize: '18px',
   fontWeight: '600',
   borderBottom: '1px solid #2a2a4a',
-  paddingBottom: '15px',
-  marginBottom: '10px',
+  paddingBottom: '10px',
+  marginBottom: '8px',
 };
 
 export const controlGroupStyle = {
   display: 'flex',
   flexDirection: 'column',
-  gap: '10px',
-  padding: '15px',
+  gap: '8px',
+  padding: '10px',
   backgroundColor: '#1e1e3f',
   borderRadius: '8px',
 };
 
 export const labelStyle = {
-  fontSize: '11px',
+  fontSize: '10px',
   fontWeight: '600',
   color: '#94a3b8',
   textTransform: 'uppercase',
@@ -64,7 +64,7 @@ export const labelStyle = {
 export const inputRowStyle = {
   display: 'flex',
   alignItems: 'center',
-  gap: '10px',
+  gap: '8px',
 };
 
 export const colorInputStyle = {
@@ -81,12 +81,12 @@ export const rangeStyle = {
 };
 
 export const buttonStyle = (active = false, color = '#3b82f6') => ({
-  padding: '10px 16px',
+  padding: '8px 12px',
   border: 'none',
   borderRadius: '6px',
   cursor: 'pointer',
   fontWeight: '600',
-  fontSize: '13px',
+  fontSize: '12px',
   backgroundColor: active ? '#22c55e' : color,
   color: '#ffffff',
   transition: 'all 0.2s',
