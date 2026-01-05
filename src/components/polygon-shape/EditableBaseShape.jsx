@@ -16,6 +16,7 @@ import { canvasWrapperStyle, canvasStyle, drawerStyle, headerStyle, controlGroup
  */
 function EditableBaseShape() {
   const canvasRef = useRef(null);
+  const gridCanvasRef = useRef(null); // Separate canvas for grid
   const canvasInstanceRef = useRef(null);
   const polygonRef = useRef(null);
   const nodesRef = useRef([]);
@@ -54,12 +55,6 @@ function EditableBaseShape() {
     editModeRef.current = editMode;
   }, [editMode]);
 
-  // Redraw canvas when grid changes
-  useEffect(() => {
-    if (canvasInstanceRef.current) {
-      canvasInstanceRef.current.renderAll();
-    }
-  }, [gridOn]);
 
   // Helper: Clear all nodes from canvas
   const clearNodes = () => {
@@ -85,50 +80,65 @@ function EditableBaseShape() {
     edgeLinesRef.current = [];
   };
 
-  // Helper: Draw grid on canvas
+  // Function untuk menggambar grid pada canvas terpisah
   const drawGrid = () => {
-    const canvas = canvasInstanceRef.current;
-    if (!canvas || !gridOn) return;
+    const gridCanvas = gridCanvasRef.current;
+    const fabricCanvas = canvasInstanceRef.current;
+    if (!gridCanvas || !fabricCanvas) return;
 
-    const ctx = canvas.getContext('2d');
-    const zoom = canvas.getZoom();
-    const vpt = canvas.viewportTransform;
+    const ctx = gridCanvas.getContext('2d');
+    const width = gridCanvas.width;
+    const height = gridCanvas.height;
 
-    // Calculate visible area
-    const canvasWidth = canvas.width;
-    const canvasHeight = canvas.height;
+    // Clear dan gambar background
+    ctx.fillStyle = '#1a1a2e';
+    ctx.fillRect(0, 0, width, height);
 
-    // Transform viewport to world coordinates
+    // Jangan gambar grid lines jika grid off
+    if (!gridOn) return;
+
+    const zoom = fabricCanvas.getZoom();
+    const vpt = fabricCanvas.viewportTransform;
+    const gridSpacing = baseGridSpacingRef.current;
+
+    // Calculate visible area in world coordinates
     const startX = -vpt[4] / zoom;
     const startY = -vpt[5] / zoom;
-    const endX = startX + canvasWidth / zoom;
-    const endY = startY + canvasHeight / zoom;
+    const endX = startX + width / zoom;
+    const endY = startY + height / zoom;
 
     ctx.save();
     ctx.strokeStyle = '#374151';
-    ctx.lineWidth = 1 / zoom;
-    ctx.setLineDash([2 / zoom, 2 / zoom]);
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 4]);
 
     // Vertical lines
-    for (let x = Math.floor(startX / baseGridSpacingRef.current) * baseGridSpacingRef.current; x <= endX; x += baseGridSpacingRef.current) {
-      const screenX = (x - startX) * zoom;
+    const firstVertX = Math.floor(startX / gridSpacing) * gridSpacing;
+    for (let worldX = firstVertX; worldX <= endX; worldX += gridSpacing) {
+      const screenX = (worldX - startX) * zoom;
       ctx.beginPath();
       ctx.moveTo(screenX, 0);
-      ctx.lineTo(screenX, canvasHeight);
+      ctx.lineTo(screenX, height);
       ctx.stroke();
     }
 
     // Horizontal lines
-    for (let y = Math.floor(startY / baseGridSpacingRef.current) * baseGridSpacingRef.current; y <= endY; y += baseGridSpacingRef.current) {
-      const screenY = (y - startY) * zoom;
+    const firstHorizY = Math.floor(startY / gridSpacing) * gridSpacing;
+    for (let worldY = firstHorizY; worldY <= endY; worldY += gridSpacing) {
+      const screenY = (worldY - startY) * zoom;
       ctx.beginPath();
       ctx.moveTo(0, screenY);
-      ctx.lineTo(canvasWidth, screenY);
+      ctx.lineTo(width, screenY);
       ctx.stroke();
     }
 
     ctx.restore();
   };
+
+  // Redraw grid when gridOn, zoomLevel changes, or after pan
+  useEffect(() => {
+    drawGrid();
+  }, [gridOn, zoomLevel]);
 
   // Helper: Fit view to show all objects
   const fitView = () => {
@@ -163,6 +173,7 @@ function EditableBaseShape() {
     canvas.setZoom(Math.max(0.1, Math.min(3, zoom)));
     canvas.absolutePan({ x: centerX * zoom - canvasWidth / 2, y: centerY * zoom - canvasHeight / 2 });
     setZoomLevel(canvas.getZoom());
+    drawGrid(); // Redraw grid setelah fit view
     canvas.requestRenderAll();
   };
 
@@ -491,7 +502,7 @@ function EditableBaseShape() {
     if (canvasInstanceRef.current) return;
 
     const canvas = new Canvas(canvasRef.current, {
-      backgroundColor: '#1a1a2e',
+      backgroundColor: 'transparent', // Transparan agar grid terlihat
       selection: false,
     });
 
@@ -502,6 +513,14 @@ function EditableBaseShape() {
       if (canvasContainerRef.current && canvasInstanceRef.current) {
         const { clientWidth, clientHeight } = canvasContainerRef.current;
         canvasInstanceRef.current.setDimensions({ width: clientWidth, height: clientHeight });
+        
+        // Resize grid canvas juga
+        if (gridCanvasRef.current) {
+          gridCanvasRef.current.width = clientWidth;
+          gridCanvasRef.current.height = clientHeight;
+          drawGrid();
+        }
+        
         canvasInstanceRef.current.requestRenderAll();
         // After resize, if in edit mode, redraw nodes/lines
         if (editModeRef.current) {
@@ -558,6 +577,7 @@ function EditableBaseShape() {
       const deltaY = evt.clientY - lastPosRef.current.y;
       canvas.relativePan({ x: deltaX, y: deltaY });
       lastPosRef.current = { x: evt.clientX, y: evt.clientY };
+      drawGrid(); // Redraw grid saat pan
       canvas.requestRenderAll();
     });
 
@@ -574,12 +594,10 @@ function EditableBaseShape() {
       zoom = Math.max(0.1, Math.min(3, zoom)); // Limit zoom between 0.1 and 3
       canvas.zoomToPoint({ x: opt.e.offsetX, y: opt.e.offsetY }, zoom);
       setZoomLevel(zoom);
+      drawGrid(); // Redraw grid saat zoom
       opt.e.preventDefault();
       opt.e.stopPropagation();
     });
-
-    // Draw grid after render
-    canvas.on('after:render', drawGrid);
 
     // Initial polygon
     rebuildPolygon(false);
@@ -595,7 +613,29 @@ function EditableBaseShape() {
     <div>
       {/* Canvas Area */}
       <div ref={canvasContainerRef} style={canvasWrapperStyle}>
-        <canvas ref={canvasRef} style={canvasStyle} />
+        {/* Grid Canvas - di bawah fabric canvas */}
+        <canvas 
+          ref={gridCanvasRef} 
+          style={{
+            ...canvasStyle,
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            pointerEvents: 'none', // Tidak menerima mouse events
+            zIndex: 0,
+          }} 
+        />
+        {/* Fabric Canvas - di atas grid */}
+        <canvas 
+          ref={canvasRef} 
+          style={{
+            ...canvasStyle,
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            zIndex: 1,
+          }} 
+        />
         
         {/* Floating Controls */}
         <div style={{
