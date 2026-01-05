@@ -1,5 +1,6 @@
 import { useRef } from 'react';
 import { sidebarStyle, sidebarButtonStyle } from '../styles';
+import { Menu, X, Square, Minus, Type, Image, Zap } from 'lucide-react';
 
 /**
  * Sidebar - Menu komponen untuk menambah elemen ke canvas
@@ -29,88 +30,86 @@ function Sidebar({ onAddElement, collapsed = true, onToggleCollapse }) {
   const handleAddImage = () => {
     fileInputRef.current?.click();
   };
-  if (collapsed) {
-    return (
-      <div style={{
-        ...sidebarStyle,
-        width: '33px',
-        padding: '4px',
-      }}>
-        <button
-          onClick={onToggleCollapse}
-          style={sidebarButtonStyle(false)}
-          title="Expand Sidebar"
-        >
-          ☰
-        </button>
-      </div>
-    );
-  }
 
   return (
-    <div style={sidebarStyle}>
-      {/* Collapse button */}
+    <div style={{
+      ...sidebarStyle,
+      width: '33px',
+      padding: '4px',
+    }}>
       <button
         onClick={onToggleCollapse}
         style={sidebarButtonStyle(false)}
-        title="Collapse Sidebar"
+        title={collapsed ? "Expand Sidebar" : "Collapse Sidebar"}
       >
-        ✕
+        {collapsed ? <Menu size={20} /> : <X size={20} />}
       </button>
 
-      {/* Divider */}
-      <div style={{
-        borderBottom: '1px solid #2a2a4a',
-        margin: '4px 0'
-      }} />
+      {!collapsed && (
+        <>
+          {/* Divider */}
+          <div style={{
+            borderBottom: '1px solid #2a2a4a',
+            margin: '4px 0'
+          }} />
 
-      {/* Add Polygon */}
-      <button
-        onClick={() => onAddElement('polygon')}
-        style={sidebarButtonStyle(false)}
-        title="Add Polyline/Polygon Shape"
-      >
-        ⬡
-      </button>
+          {/* Add Polygon */}
+          <button
+            onClick={() => onAddElement('polygon')}
+            style={sidebarButtonStyle(false)}
+            title="Add Shape"
+          >
+            <Square size={20} />
+          </button>
 
-      {/* Add Text */}
-      <button
-        onClick={() => onAddElement('text')}
-        style={sidebarButtonStyle(false)}
-        title="Add Text"
-      >
-        T
-      </button>
+          {/* Add Line */}
+          <button
+            onClick={() => onAddElement('bezierLine')}
+            style={sidebarButtonStyle(false)}
+            title="Add Line"
+          >
+            <Minus size={20} />
+          </button>
 
-      {/* Add Image */}
-      <button
-        onClick={handleAddImage}
-        style={sidebarButtonStyle(false)}
-        title="Add Image"
-      >
-        🖼
-      </button>
+          {/* Add Text */}
+          <button
+            onClick={() => onAddElement('text')}
+            style={sidebarButtonStyle(false)}
+            title="Add Text"
+          >
+            <Type size={20} />
+          </button>
 
-      {/* Add Symbol */}
-      <button
-        onClick={() => onAddElement('symbol')}
-        style={sidebarButtonStyle(false)}
-        title="Add Machine Symbol (Ongoing)"
-      >
-        ⚡
-      </button>
+          {/* Add Image */}
+          <button
+            onClick={handleAddImage}
+            style={sidebarButtonStyle(false)}
+            title="Add Image"
+          >
+            <Image size={20} />
+          </button>
 
-      {/* Hidden file input for image selection */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        onChange={handleImageSelect}
-        style={{ display: 'none' }}
-      />
+          {/* Add Symbol */}
+          <button
+            onClick={() => onAddElement('symbol')}
+            style={sidebarButtonStyle(false)}
+            title="Add Machine Symbol (Ongoing)"
+          >
+            <Zap size={20} />
+          </button>
+
+          {/* Hidden file input for image selection */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleImageSelect}
+            style={{ display: 'none' }}
+          />
+        </>
+      )}
     </div>
   );
 }
 
 export default Sidebar;
-

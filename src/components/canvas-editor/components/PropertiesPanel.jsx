@@ -10,6 +10,8 @@ import {
 import PolygonProperties from './PolygonProperties';
 import TextProperties from './TextProperties';
 import ImageProperties from './ImageProperties';
+import LineProperties from './LineProperties';
+import { Square, Type, Image, Zap, Minus, Trash2 } from 'lucide-react';
 
 /**
  * PropertiesPanel - Panel untuk mengedit properties elemen yang dipilih
@@ -26,6 +28,8 @@ function PropertiesPanel({ element, onUpdate, onDelete }) {
   const [editMode, setEditMode] = useState(false);
   const [nodeCount, setNodeCount] = useState(0);
   const [selectedNodeIndex, setSelectedNodeIndex] = useState(null);
+  const [segmentCount, setSegmentCount] = useState(0);
+  const [selectedControlPointIndex, setSelectedControlPointIndex] = useState(null);
 
   // Sync properties from element
   useEffect(() => {
@@ -35,15 +39,19 @@ function PropertiesPanel({ element, onUpdate, onDelete }) {
       setEditMode(element.isEditMode || false);
       setNodeCount(element.getNodeCount?.() || 0);
       setSelectedNodeIndex(element.getSelectedNodeIndex?.() || null);
+      setSegmentCount(element.getSegmentCount?.() || 0);
+      setSelectedControlPointIndex(element.getSelectedControlPointIndex?.() || null);
     }
   }, [element]);
 
-  // Re-sync when element updates (for node operations)
+  // Re-sync when element updates (for node/segment operations)
   useEffect(() => {
     if (element) {
       const interval = setInterval(() => {
         setNodeCount(element.getNodeCount?.() || 0);
         setSelectedNodeIndex(element.getSelectedNodeIndex?.() || null);
+        setSegmentCount(element.getSegmentCount?.() || 0);
+        setSelectedControlPointIndex(element.getSelectedControlPointIndex?.() || null);
       }, 100);
       return () => clearInterval(interval);
     }
@@ -67,6 +75,7 @@ function PropertiesPanel({ element, onUpdate, onDelete }) {
     
     if (!newEditMode) {
       element.selectPolygon?.();
+      element.selectBezierLine?.();
     }
   };
 
@@ -101,10 +110,11 @@ function PropertiesPanel({ element, onUpdate, onDelete }) {
   // Get icon based on element type
   const getElementIcon = () => {
     switch (element.type) {
-      case 'polygon': return '⬡';
-      case 'text': return 'T';
-      case 'symbol': return '⚡';
-      case 'image': return '🖼';
+      case 'polygon': return <Square size={16} />;
+      case 'text': return <Type size={16} />;
+      case 'symbol': return <Zap size={16} />;
+      case 'image': return <Image size={16} />;
+      case 'line': return <Minus size={16} />;
       default: return '□';
     }
   };
@@ -144,7 +154,7 @@ function PropertiesPanel({ element, onUpdate, onDelete }) {
       {element.type === 'symbol' && (
         <div style={controlGroupStyle}>
           <span style={smallTextStyle}>
-            ⚡ Machine Symbol properties (Coming Soon)
+            <Zap size={14} /> Machine Symbol properties (Coming Soon)
           </span>
         </div>
       )}
@@ -155,15 +165,37 @@ function PropertiesPanel({ element, onUpdate, onDelete }) {
           onResetSize={() => element.resetSize?.()}
         />
       )}
+      {element.type === 'line' && (
+        <LineProperties
+          properties={properties}
+          editMode={editMode}
+          segmentCount={segmentCount}
+          selectedControlPointIndex={selectedControlPointIndex}
+          onPropertyChange={handlePropertyChange}
+          onToggleEditMode={toggleEditMode}
+          onDeleteSelectedSegment={() => {
+            const success = element.deleteSelectedSegment?.();
+            if (!success && element.getSegmentCount?.() <= 1) {
+              alert('Minimal 2 titik untuk membentuk garis!');
+            }
+          }}
+        />
+      )}
 
       {/* Delete Element */}
       <div style={controlGroupStyle}>
         <span style={labelStyle}>Element Actions</span>
         <button
           onClick={onDelete}
-          style={buttonStyle(false, '#dc2626')}
+          style={{
+            ...buttonStyle(false, '#dc2626'),
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '6px',
+          }}
         >
-          🗑 Delete Element
+          <Trash2 size={16} /> Delete Element
         </button>
       </div>
     </div>
@@ -171,4 +203,3 @@ function PropertiesPanel({ element, onUpdate, onDelete }) {
 }
 
 export default PropertiesPanel;
-

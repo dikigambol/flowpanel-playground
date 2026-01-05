@@ -178,9 +178,15 @@ function CanvasEditor() {
       // Escape to deselect or exit edit mode
       if (e.key === 'Escape') {
         const element = getSelectedElement();
+        // Cancel bezier line drawing if active
+        if (element?.properties?.isDrawing) {
+          element.cancelDrawing?.();
+          return;
+        }
         if (element?.isEditMode) {
           element.setEditMode(false);
           element.selectPolygon?.();
+          element.selectBezierLine?.();
         } else {
           selectElement(null);
         }
@@ -249,6 +255,8 @@ function CanvasEditor() {
           selectElement(obj._textElement.id);
         } else if (obj._imageElement) {
           selectElement(obj._imageElement.id);
+        } else if (obj._bezierLineElement) {
+          selectElement(obj._bezierLineElement.id);
         }
       }
     });
@@ -262,6 +270,8 @@ function CanvasEditor() {
           selectElement(obj._textElement.id);
         } else if (obj._imageElement) {
           selectElement(obj._imageElement.id);
+        } else if (obj._bezierLineElement) {
+          selectElement(obj._bezierLineElement.id);
         }
       }
     });
@@ -285,14 +295,32 @@ function CanvasEditor() {
       selectElement(null);
     });
 
-    // Double-click to add node in edit mode
+    // Double-click to add node in edit mode or finish bezier line drawing
     canvas.on('mouse:dblclick', (opt) => {
+      // Check if bezier line is in drawing mode
+      const allElements = Array.from(canvas.getObjects())
+        .map(obj => obj._bezierLineElement || obj._polygonElement || obj._textElement || obj._imageElement)
+        .filter(Boolean);
+      
+      const drawingBezierLine = allElements.find(el => el?.properties?.isDrawing);
+      if (drawingBezierLine) {
+        // Let bezier line handle the double-click
+        return;
+      }
+
       // Find if any element is in edit mode
       const selectedEl = getSelectedElement();
       if (!selectedEl?.isEditMode) return;
 
-      // If clicked on edge handle, add node at that edge
+      // If clicked on edge handle (polygon), add node at that edge
       if (opt.target && opt.target._isEdgeHandle) {
+        const edgeIndex = opt.target._edgeIndex;
+        selectedEl.addNodeAtEdge?.(edgeIndex);
+        return;
+      }
+
+      // If clicked on edge line (bezier/polyline), add node at that edge
+      if (opt.target && opt.target._isEdgeLine) {
         const edgeIndex = opt.target._edgeIndex;
         selectedEl.addNodeAtEdge?.(edgeIndex);
         return;

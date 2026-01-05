@@ -6,6 +6,7 @@ import {
   mutedTextStyle,
   verticalDividerStyle,
 } from '../styles';
+import { MousePointer2, Hand, Maximize2 } from 'lucide-react';
 
 /**
  * FloatingToolbar - Toolbar floating untuk canvas controls
@@ -35,14 +36,14 @@ function FloatingToolbar({
           title="Select Tool (V)"
           style={iconButtonStyle(activeTool === 'select')}
         >
-          ↖
+          <MousePointer2 size={16} />
         </button>
         <button
           onClick={() => onToolChange('pan')}
           title="Pan Tool (H)"
           style={iconButtonStyle(activeTool === 'pan')}
         >
-          ✋
+          <Hand size={16} />
         </button>
       </div>
 
@@ -70,14 +71,16 @@ function FloatingToolbar({
           padding: '4px 8px', 
           fontSize: '11px',
           minWidth: 'auto',
-          margin: 0
+          margin: 0,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '4px',
         }}
       >
-        📐 Fit
+        <Maximize2 size={14} /> Fit
       </button>
     </div>
   );
 }
 
 export default FloatingToolbar;
-

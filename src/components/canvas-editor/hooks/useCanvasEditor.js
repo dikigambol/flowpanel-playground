@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
-import { createPolygonElement, createTextElement, createImageElement } from '../elements';
+import { createPolygonElement, createTextElement, createImageElement, createBezierLineElement } from '../elements';
 
 /**
  * useCanvasEditor - Custom hook untuk state management canvas editor
@@ -135,6 +135,26 @@ export function useCanvasEditor() {
         // Image is async, handle separately
         return addImageElement(canvas, canvasCenter, offset, options);
 
+      case 'bezierLine':
+        element = createBezierLineElement(canvas, {
+          strokeColor: options.strokeColor || '#22c55e',
+          strokeWidth: options.strokeWidth || 3,
+          centerX: canvasCenter.x,
+          centerY: canvasCenter.y,
+          offset: offset,
+          onSelect: (el) => {
+            setSelectedElementId(el.id);
+          },
+          onUpdate: (el) => {
+            // Trigger re-render when element updates
+            setElements(prev => [...prev]);
+          },
+          onDelete: (el) => {
+            removeElementFromState(el.id);
+          },
+        });
+        break;
+
       default:
         console.error(`Unknown element type: ${type}`);
         return null;
@@ -160,6 +180,9 @@ export function useCanvasEditor() {
         element.selectText();
       } else if (element.type === 'image') {
         element.selectImage();
+      } else if (element.type === 'bezierLine') {
+        // Select bezier line (not in drawing mode)
+        element.selectBezierLine();
       }
 
       return element;
