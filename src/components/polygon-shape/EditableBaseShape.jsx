@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Canvas, Polygon, Circle, Line, util as fabricUtil } from 'fabric';
+import { canvasWrapperStyle, drawerStyle, headerStyle, controlGroupStyle, labelStyle, inputRowStyle, colorInputStyle, rangeStyle, buttonStyle, checkboxStyle } from './style.js';
 
 /**
  * EditableBaseShape Component
@@ -22,7 +23,7 @@ function EditableBaseShape() {
   const selectedNodeIndexRef = useRef(null);
   const editModeRef = useRef(false);
   const canvasContainerRef = useRef(null);
-  
+
   // State untuk kontrol UI
   const [fillColor, setFillColor] = useState('#3b82f6');
   const [strokeColor, setStrokeColor] = useState('#1e40af');
@@ -49,7 +50,7 @@ function EditableBaseShape() {
   const clearNodes = () => {
     const canvas = canvasInstanceRef.current;
     if (!canvas) return;
-    
+
     nodesRef.current.forEach(node => {
       node.off(); // Remove all event listeners
       canvas.remove(node);
@@ -61,7 +62,7 @@ function EditableBaseShape() {
   const clearEdgeLines = () => {
     const canvas = canvasInstanceRef.current;
     if (!canvas) return;
-    
+
     edgeLinesRef.current.forEach(line => {
       line.off();
       canvas.remove(line);
@@ -75,19 +76,19 @@ function EditableBaseShape() {
 
     // Get transformation matrix yang mencakup semua transformasi (position, scale, rotation)
     const matrix = polygon.calcTransformMatrix();
-    
+
     const absoluteVertices = polygon.points.map(p => {
       // Transform dari local coordinates ke canvas coordinates
       // Local coordinates: point relative to pathOffset
       const localX = p.x - polygon.pathOffset.x;
       const localY = p.y - polygon.pathOffset.y;
-      
+
       // Apply transformation matrix
       const transformed = fabricUtil.transformPoint({ x: localX, y: localY }, matrix);
-      
+
       return { x: transformed.x, y: transformed.y };
     });
-    
+
     return absoluteVertices;
   };
 
@@ -111,9 +112,9 @@ function EditableBaseShape() {
     if (!canvas) return;
 
     const currentPoints = pointsRef.current; // These are absolute canvas coordinates
-    
+
     if (currentPoints.length < 3) return;
-    
+
     // Hapus polygon lama
     if (polygonRef.current) {
       polygonRef.current.off();
@@ -128,30 +129,30 @@ function EditableBaseShape() {
       strokeWidth: hasBorder ? strokeWidth : 0,
       strokeUniform: true,
       objectCaching: false,
-      
+
       selectable: !isEditMode,
       evented: !isEditMode,
       hasControls: !isEditMode,
       hasBorders: !isEditMode,
-      
+
       transparentCorners: false,
       cornerColor: '#3b82f6',
       cornerStrokeColor: '#ffffff',
       cornerSize: 10,
       cornerStyle: 'circle',
       borderColor: '#3b82f6',
-      
+
       hoverCursor: isEditMode ? 'default' : 'move',
     });
 
     polygonRef.current = polygon;
     canvas.add(polygon);
     canvas.sendObjectToBack(polygon);
-    
+
     if (!isEditMode) {
       canvas.setActiveObject(polygon);
     }
-    
+
     canvas.requestRenderAll();
     setNodeCount(currentPoints.length);
   };
@@ -164,10 +165,10 @@ function EditableBaseShape() {
     clearEdgeLines();
 
     const points = pointsRef.current;
-    
+
     points.forEach((point, index) => {
       const nextPoint = points[(index + 1) % points.length];
-      
+
       const line = new Line([point.x, point.y, nextPoint.x, nextPoint.y], {
         stroke: '#60a5fa',
         strokeWidth: 2,
@@ -209,7 +210,7 @@ function EditableBaseShape() {
     clearNodes();
 
     const points = pointsRef.current;
-    
+
     points.forEach((point, index) => {
       const node = new Circle({
         left: point.x,
@@ -234,13 +235,13 @@ function EditableBaseShape() {
       node.on('moving', () => {
         const idx = node.nodeIndex;
         pointsRef.current[idx] = { x: node.left, y: node.top };
-        
+
         // Rebuild polygon dengan points baru
         rebuildPolygon(true);
-        
+
         // Update edge lines positions
         updateEdgeLinesPositions();
-        
+
         canvasInstanceRef.current?.requestRenderAll();
       });
 
@@ -262,7 +263,7 @@ function EditableBaseShape() {
   const updateEdgeLinesPositions = () => {
     const points = pointsRef.current;
     const lines = edgeLinesRef.current;
-    
+
     lines.forEach((line, index) => {
       const nextIndex = (index + 1) % points.length;
       line.set({
@@ -292,10 +293,10 @@ function EditableBaseShape() {
   const addNodeAtEdge = (edgeIndex) => {
     const points = pointsRef.current;
     const nextIndex = (edgeIndex + 1) % points.length;
-    
+
     const p1 = points[edgeIndex];
     const p2 = points[nextIndex];
-    
+
     // Titik tengah
     const newPoint = {
       x: (p1.x + p2.x) / 2,
@@ -304,10 +305,10 @@ function EditableBaseShape() {
 
     // Insert setelah edgeIndex
     points.splice(edgeIndex + 1, 0, newPoint);
-    
+
     // Select node baru
     selectedNodeIndexRef.current = edgeIndex + 1;
-    
+
     // Rebuild everything
     rebuildPolygon(true);
     createEdgeLines();
@@ -318,11 +319,11 @@ function EditableBaseShape() {
   const deleteSelectedNode = () => {
     const points = pointsRef.current;
     const selectedIndex = selectedNodeIndexRef.current;
-    
+
     if (selectedIndex === null) {
       return;
     }
-    
+
     // Minimum 3 nodes untuk polygon
     if (points.length <= 3) {
       alert('Minimal 3 node untuk membentuk polygon!');
@@ -332,7 +333,7 @@ function EditableBaseShape() {
     // Hapus point
     points.splice(selectedIndex, 1);
     selectedNodeIndexRef.current = null;
-    
+
     // Rebuild everything
     rebuildPolygon(true);
     createEdgeLines();
@@ -431,9 +432,9 @@ function EditableBaseShape() {
     canvas.on('mouse:dblclick', (opt) => {
       if (!editModeRef.current) return;
       if (opt.target) return; // Jangan add jika klik pada object
-      
+
       const pointer = canvas.getPointer(opt.e);
-      
+
       // Simple add node at click position if not near any edge
       pointsRef.current.push({ x: pointer.x, y: pointer.y });
       // Automatically select the newly added node
@@ -453,127 +454,17 @@ function EditableBaseShape() {
     };
   }, []);
 
-  // ========== STYLES ==========
-  const mainContainerStyle = {
-    display: 'flex',
-    height: '100vh',
-    width: '100vw',
-    overflow: 'hidden',
-    fontFamily: "'Segoe UI', system-ui, sans-serif",
-    backgroundColor: '#0f0f23',
-    color: '#e0e0e0',
-  };
-
-  const canvasWrapperStyle = {
-    flexGrow: 1,
-    position: 'relative',
-    backgroundColor: '#1a1a2e',
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-  };
-
-  const canvasStyle = {
-    border: '2px solid #3b82f6',
-    borderRadius: '12px',
-    boxShadow: '0 4px 20px rgba(59, 130, 246, 0.3)',
-  };
-
-  const drawerStyle = {
-    width: '300px',
-    minWidth: '300px',
-    backgroundColor: '#15152a',
-    borderLeft: '1px solid #2a2a4a',
-    padding: '20px',
-    overflowY: 'auto',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '25px',
-  };
-
-  const headerStyle = {
-    color: '#60a5fa',
-    fontSize: '22px',
-    fontWeight: '600',
-    borderBottom: '1px solid #2a2a4a',
-    paddingBottom: '15px',
-    marginBottom: '10px',
-  };
-
-  const controlGroupStyle = {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '10px',
-    padding: '15px',
-    backgroundColor: '#1e1e3f',
-    borderRadius: '8px',
-  };
-
-  const labelStyle = {
-    fontSize: '11px',
-    fontWeight: '600',
-    color: '#94a3b8',
-    textTransform: 'uppercase',
-    letterSpacing: '0.5px',
-  };
-
-  const inputRowStyle = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-  };
-
-  const colorInputStyle = {
-    width: '40px',
-    height: '32px',
-    border: 'none',
-    borderRadius: '6px',
-    cursor: 'pointer',
-  };
-
-  const rangeStyle = {
-    flex: 1,
-    accentColor: '#3b82f6',
-  };
-
-  const buttonStyle = (active = false, color = '#3b82f6') => ({
-    padding: '10px 16px',
-    border: 'none',
-    borderRadius: '6px',
-    cursor: 'pointer',
-    fontWeight: '600',
-    fontSize: '13px',
-    backgroundColor: active ? '#22c55e' : color,
-    color: '#ffffff',
-    transition: 'all 0.2s',
-  });
-
-  const checkboxStyle = {
-    width: '18px',
-    height: '18px',
-    accentColor: '#3b82f6',
-    cursor: 'pointer',
-  };
-
-  const instructionsStyle = {
-    padding: '15px',
-    backgroundColor: '#1e1e3f',
-    borderRadius: '8px',
-    fontSize: '13px',
-    lineHeight: '1.8',
-  };
-
   return (
-    <div style={mainContainerStyle}>
+    <div>
       {/* Canvas Area */}
       <div ref={canvasContainerRef} style={canvasWrapperStyle}>
-        <canvas ref={canvasRef} style={canvasStyle} />
+        <canvas ref={canvasRef} />
       </div>
 
       {/* Properties Drawer */}
       <div style={drawerStyle}>
         <h1 style={headerStyle}>🔷 Polygon Editor</h1>
-        
+
         {/* Fill Color */}
         <div style={controlGroupStyle}>
           <span style={labelStyle}>Fill Color</span>

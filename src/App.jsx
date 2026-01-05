@@ -1,10 +1,8 @@
-import EditableBaseShape from './components/EditableBaseShape';
+import EditableBaseShape from "./components/polygon-shape/EditableBaseShape";
 
 function App() {
   return (
-    <div>
-      <EditableBaseShape/>
-    </div>
+    <EditableBaseShape />
   );
 }
 
