@@ -277,6 +277,10 @@ export class PolygonElement extends BaseElement {
       evented: !isEditMode,
       hasControls: !isEditMode,
       hasBorders: !isEditMode,
+      
+      // Use per-pixel hit detection so clicks only register on filled area, not bounding box
+      // This prevents polygon from intercepting clicks on other shapes within its bounding box
+      perPixelTargetFind: true,
 
       transparentCorners: false,
       cornerColor: '#3b82f6',
