@@ -1,0 +1,199 @@
+// Shared styles for Canvas Editor components
+
+// ==================== Canvas Styles ====================
+
+export const canvasWrapperStyle = {
+  position: 'fixed',
+  top: 0,
+  left: 0,
+  width: '100vw',
+  height: '100vh',
+  margin: 0,
+  padding: 0,
+  backgroundColor: '#1a1a2e',
+};
+
+export const canvasStyle = {
+  width: '100%',
+  height: '100%',
+  display: 'block',
+};
+
+// ==================== Panel Styles ====================
+
+export const drawerStyle = {
+  position: 'absolute',
+  top: '20px',
+  right: '20px',
+  width: '250px',
+  backgroundColor: '#15152a',
+  border: '1px solid #2a2a4a',
+  borderRadius: '12px',
+  padding: '15px',
+  overflowY: 'auto',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '15px',
+  zIndex: 10,
+  boxShadow: '0 4px 20px rgba(0, 0, 0, 0.5)',
+  fontFamily: "'Segoe UI', system-ui, sans-serif",
+};
+
+export const sidebarStyle = {
+  position: 'absolute',
+  top: '20px',
+  left: '20px',
+  width: '60px',
+  backgroundColor: '#15152a',
+  border: '1px solid #2a2a4a',
+  borderRadius: '12px',
+  padding: '10px',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '8px',
+  zIndex: 10,
+  boxShadow: '0 4px 20px rgba(0, 0, 0, 0.5)',
+  fontFamily: "'Segoe UI', system-ui, sans-serif",
+};
+
+export const floatingToolbarStyle = {
+  position: 'absolute',
+  top: '10px',
+  left: '50%',
+  transform: 'translateX(-50%)',
+  backgroundColor: 'rgba(15, 23, 42, 0.9)',
+  borderRadius: '8px',
+  padding: '6px 12px',
+  display: 'flex',
+  flexDirection: 'row',
+  alignItems: 'center',
+  gap: '12px',
+  zIndex: 1000,
+  backdropFilter: 'blur(8px)',
+  border: '1px solid rgba(71, 85, 105, 0.3)',
+};
+
+// ==================== Typography Styles ====================
+
+export const headerStyle = {
+  color: '#60a5fa',
+  fontSize: '18px',
+  fontWeight: '600',
+  borderBottom: '1px solid #2a2a4a',
+  paddingBottom: '10px',
+  marginBottom: '8px',
+};
+
+export const labelStyle = {
+  fontSize: '10px',
+  fontWeight: '600',
+  color: '#94a3b8',
+  textTransform: 'uppercase',
+  letterSpacing: '0.5px',
+};
+
+export const smallTextStyle = {
+  fontSize: '11px',
+  color: '#cbd5e1',
+};
+
+export const mutedTextStyle = {
+  fontSize: '11px',
+  color: '#94a3b8',
+};
+
+// ==================== Control Group Styles ====================
+
+export const controlGroupStyle = {
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '8px',
+  padding: '10px',
+  backgroundColor: '#1e1e3f',
+  borderRadius: '8px',
+};
+
+export const inputRowStyle = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '8px',
+};
+
+// ==================== Input Styles ====================
+
+export const colorInputStyle = {
+  width: '40px',
+  height: '32px',
+  border: 'none',
+  borderRadius: '6px',
+  cursor: 'pointer',
+};
+
+export const rangeStyle = {
+  flex: 1,
+  accentColor: '#3b82f6',
+};
+
+export const checkboxStyle = {
+  width: '18px',
+  height: '18px',
+  accentColor: '#3b82f6',
+  cursor: 'pointer',
+};
+
+// ==================== Button Styles ====================
+
+export const buttonStyle = (active = false, color = '#3b82f6') => ({
+  padding: '8px 12px',
+  border: 'none',
+  borderRadius: '6px',
+  cursor: 'pointer',
+  fontWeight: '600',
+  fontSize: '12px',
+  backgroundColor: active ? '#22c55e' : color,
+  color: '#ffffff',
+  transition: 'all 0.2s',
+});
+
+export const iconButtonStyle = (active = false) => ({
+  padding: '8px 12px',
+  fontSize: '16px',
+  border: 'none',
+  borderRadius: '6px',
+  cursor: 'pointer',
+  backgroundColor: active ? '#3b82f6' : 'transparent',
+  color: active ? '#ffffff' : '#94a3b8',
+  transition: 'all 0.15s',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+});
+
+export const sidebarButtonStyle = (active = false) => ({
+  width: '40px',
+  height: '40px',
+  border: 'none',
+  borderRadius: '8px',
+  cursor: 'pointer',
+  backgroundColor: active ? '#3b82f6' : 'transparent',
+  color: active ? '#ffffff' : '#94a3b8',
+  fontSize: '18px',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  transition: 'all 0.15s',
+});
+
+// ==================== Divider Styles ====================
+
+export const verticalDividerStyle = {
+  borderRight: '1px solid rgba(71, 85, 105, 0.5)',
+  paddingRight: '12px',
+};
+
+export const horizontalDividerStyle = {
+  borderBottom: '1px solid rgba(71, 85, 105, 0.5)',
+  paddingBottom: '8px',
+  marginBottom: '8px',
+};
+
