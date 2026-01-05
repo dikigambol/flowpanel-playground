@@ -37,6 +37,7 @@ export class PolygonElement extends BaseElement {
     this.nodes = [];
     this.edgeLines = [];
     this.selectedNodeIndex = null;
+    this._edgeDragStartPos = null; // Track edge drag start position
   }
 
   /**
@@ -344,6 +345,7 @@ export class PolygonElement extends BaseElement {
 
   /**
    * Create edge lines for edit mode
+   * Edge lines can be dragged to move both connected nodes simultaneously
    */
   _createEdgeLines() {
     this._clearEdgeLines();
@@ -351,37 +353,122 @@ export class PolygonElement extends BaseElement {
     const points = this.properties.points;
 
     points.forEach((point, index) => {
-      const nextPoint = points[(index + 1) % points.length];
+      const nextIndex = (index + 1) % points.length;
+      const nextPoint = points[nextIndex];
 
+      // Calculate midpoint for edge handle
+      const midX = (point.x + nextPoint.x) / 2;
+      const midY = (point.y + nextPoint.y) / 2;
+
+      // Create visible line (dashed)
       const line = new Line([point.x, point.y, nextPoint.x, nextPoint.y], {
         stroke: '#60a5fa',
         strokeWidth: 2,
         strokeDashArray: [5, 5],
         selectable: false,
-        evented: true,
-        hoverCursor: 'crosshair',
+        evented: false,
+        hoverCursor: 'default',
       });
 
       line._edgeIndex = index;
-      line._polygonElement = this;
+      line._isEdgeLine = true;
 
-      // Double click on edge to add node
-      line.on('mousedblclick', () => {
+      // Create draggable edge handle (circle at midpoint)
+      const edgeHandle = new Circle({
+        left: midX,
+        top: midY,
+        radius: 8,
+        fill: 'rgba(96, 165, 250, 0.3)',
+        stroke: '#60a5fa',
+        strokeWidth: 2,
+        originX: 'center',
+        originY: 'center',
+        selectable: true,
+        evented: true,
+        hasControls: false,
+        hasBorders: false,
+        hoverCursor: 'move',
+        moveCursor: 'grabbing',
+      });
+
+      edgeHandle._edgeIndex = index;
+      edgeHandle._nextIndex = nextIndex;
+      edgeHandle._polygonElement = this;
+      edgeHandle._isEdgeHandle = true;
+
+      // Store original node positions on drag start
+      edgeHandle.on('mousedown', () => {
         if (this.isEditMode) {
+          edgeHandle._startNode1 = { ...this.properties.points[index] };
+          edgeHandle._startNode2 = { ...this.properties.points[nextIndex] };
+          edgeHandle._startPos = { x: edgeHandle.left, y: edgeHandle.top };
+        }
+      });
+
+      // Drag edge handle → move both connected nodes
+      edgeHandle.on('moving', () => {
+        if (!this.isEditMode) return;
+
+        const deltaX = edgeHandle.left - edgeHandle._startPos.x;
+        const deltaY = edgeHandle.top - edgeHandle._startPos.y;
+
+        // Update both connected nodes based on delta
+        this.properties.points[index] = {
+          x: edgeHandle._startNode1.x + deltaX,
+          y: edgeHandle._startNode1.y + deltaY,
+        };
+        this.properties.points[nextIndex] = {
+          x: edgeHandle._startNode2.x + deltaX,
+          y: edgeHandle._startNode2.y + deltaY,
+        };
+
+        // Rebuild polygon with new points
+        this._rebuildPolygon(true);
+
+        // Update all edge lines positions (including this handle's line)
+        this._updateEdgeLinesPositions();
+
+        // Update all nodes positions
+        this._updateNodesPositions();
+
+        // Update all edge handles positions
+        this._updateEdgeHandlesPositions();
+
+        this.canvas.requestRenderAll();
+      });
+
+      // End drag - notify update
+      edgeHandle.on('modified', () => {
+        this.notifyUpdate();
+      });
+
+      // Double click on edge handle to add node - use mouse:dblclick event
+      edgeHandle.on('mousedblclick', () => {
+        if (this.isEditMode) {
+          console.log('Edge handle double clicked, adding node at index:', index);
           this.addNodeAtEdge(index);
         }
       });
 
       this.canvas.add(line);
+      this.canvas.add(edgeHandle);
+      
+      // Store both line and handle
+      line._edgeHandle = edgeHandle;
+      edgeHandle._edgeLine = line;
+      
       this.edgeLines.push(line);
+      this.edgeLines.push(edgeHandle);
     });
 
-    // Reorder: polygon at back, then lines, then nodes
+    // Reorder: polygon at back, then lines, then edge handles, then nodes on top
     if (this.polygon) {
       this.canvas.sendObjectToBack(this.polygon);
     }
-    this.edgeLines.forEach(line => {
-      this.canvas.sendObjectToBack(line);
+    this.edgeLines.forEach(obj => {
+      if (obj._isEdgeLine) {
+        this.canvas.sendObjectToBack(obj);
+      }
     });
 
     this.canvas.requestRenderAll();
@@ -427,6 +514,9 @@ export class PolygonElement extends BaseElement {
         // Update edge lines positions
         this._updateEdgeLinesPositions();
 
+        // Update edge handles positions
+        this._updateEdgeHandlesPositions();
+
         this.canvas.requestRenderAll();
       });
 
@@ -449,17 +539,67 @@ export class PolygonElement extends BaseElement {
    */
   _updateEdgeLinesPositions() {
     const points = this.properties.points;
-    const lines = this.edgeLines;
 
-    lines.forEach((line, index) => {
-      const nextIndex = (index + 1) % points.length;
-      line.set({
-        x1: points[index].x,
-        y1: points[index].y,
-        x2: points[nextIndex].x,
-        y2: points[nextIndex].y,
-      });
-      line.setCoords();
+    this.edgeLines.forEach(obj => {
+      if (obj._isEdgeLine) {
+        const index = obj._edgeIndex;
+        const nextIndex = (index + 1) % points.length;
+        const p1 = points[index];
+        const p2 = points[nextIndex];
+        
+        if (p1 && p2) {
+          obj.set({
+            x1: p1.x,
+            y1: p1.y,
+            x2: p2.x,
+            y2: p2.y,
+          });
+          obj.setCoords();
+        }
+      }
+    });
+  }
+
+  /**
+   * Update nodes positions without recreating
+   */
+  _updateNodesPositions() {
+    const points = this.properties.points;
+
+    this.nodes.forEach((node, index) => {
+      if (points[index]) {
+        node.set({
+          left: points[index].x,
+          top: points[index].y,
+        });
+        node.setCoords();
+      }
+    });
+  }
+
+  /**
+   * Update edge handles positions without recreating
+   */
+  _updateEdgeHandlesPositions() {
+    const points = this.properties.points;
+
+    this.edgeLines.forEach(obj => {
+      if (obj._isEdgeHandle) {
+        const index = obj._edgeIndex;
+        const nextIndex = obj._nextIndex;
+        const p1 = points[index];
+        const p2 = points[nextIndex];
+        
+        if (p1 && p2) {
+          const midX = (p1.x + p2.x) / 2;
+          const midY = (p1.y + p2.y) / 2;
+          obj.set({
+            left: midX,
+            top: midY,
+          });
+          obj.setCoords();
+        }
+      }
     });
   }
 

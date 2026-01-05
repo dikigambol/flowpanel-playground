@@ -89,11 +89,20 @@ function PropertiesPanel({ element, onUpdate, onDelete }) {
     }
   };
 
+  // Get display name based on element type
+  const getElementDisplayName = () => {
+    switch (element.type) {
+      case 'symbol': return 'Machine Symbol';
+      default: return element.type.charAt(0).toUpperCase() + element.type.slice(1);
+    }
+  };
+
   // Get icon based on element type
   const getElementIcon = () => {
     switch (element.type) {
       case 'polygon': return '⬡';
       case 'text': return 'T';
+      case 'symbol': return '⚡';
       case 'image': return '🖼';
       default: return '□';
     }
@@ -106,7 +115,7 @@ function PropertiesPanel({ element, onUpdate, onDelete }) {
     }}>
       {/* Header */}
       <h1 style={headerStyle}>
-        {getElementIcon()} {element.type.charAt(0).toUpperCase() + element.type.slice(1)}
+        {getElementIcon()} {getElementDisplayName()}
       </h1>
 
       {/* Properties based on type */}
@@ -127,6 +136,13 @@ function PropertiesPanel({ element, onUpdate, onDelete }) {
           onPropertyChange={handlePropertyChange}
           onToggleFontStyle={toggleFontStyle}
         />
+      )}
+      {element.type === 'symbol' && (
+        <div style={controlGroupStyle}>
+          <span style={smallTextStyle}>
+            ⚡ Machine Symbol properties (Coming Soon)
+          </span>
+        </div>
       )}
       {element.type === 'image' && (
         <ImageProperties

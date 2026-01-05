@@ -19,7 +19,7 @@ function Sidebar({ onAddElement, collapsed = true, onToggleCollapse }) {
       // Create object URL for the image
       const url = URL.createObjectURL(file);
       onAddElement('image', { src: url });
-      
+
       // Reset input so same file can be selected again
       e.target.value = '';
     }
@@ -59,9 +59,9 @@ function Sidebar({ onAddElement, collapsed = true, onToggleCollapse }) {
       </button>
 
       {/* Divider */}
-      <div style={{ 
-        borderBottom: '1px solid #2a2a4a', 
-        margin: '4px 0' 
+      <div style={{
+        borderBottom: '1px solid #2a2a4a',
+        margin: '4px 0'
       }} />
 
       {/* Add Polygon */}
@@ -89,6 +89,15 @@ function Sidebar({ onAddElement, collapsed = true, onToggleCollapse }) {
         title="Add Image"
       >
         🖼
+      </button>
+
+      {/* Add Symbol */}
+      <button
+        onClick={() => onAddElement('symbol')}
+        style={sidebarButtonStyle(false)}
+        title="Add Machine Symbol (Ongoing)"
+      >
+        ⚡
       </button>
 
       {/* Hidden file input for image selection */}

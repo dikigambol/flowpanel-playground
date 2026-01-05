@@ -108,6 +108,29 @@ export function useCanvasEditor() {
         });
         break;
 
+      case 'symbol':
+        // Placeholder for symbol element (ongoing)
+        console.log('Machine Symbol element is still under development');
+        // For now, create a simple text element as placeholder
+        element = createTextElement(canvas, {
+          text: '⚡ Machine Symbol (Ongoing)',
+          left: canvasCenter.x - 50 + offset,
+          top: canvasCenter.y + offset,
+          fontSize: 20,
+          fontColor: '#fbbf24',
+          fontFamily: 'Arial',
+          onSelect: (el) => {
+            setSelectedElementId(el.id);
+          },
+          onUpdate: (el) => {
+            setElements(prev => [...prev]);
+          },
+          onDelete: (el) => {
+            removeElementFromState(el.id);
+          },
+        });
+        break;
+
       case 'image':
         // Image is async, handle separately
         return addImageElement(canvas, canvasCenter, offset, options);
@@ -133,7 +156,7 @@ export function useCanvasEditor() {
       // Call appropriate select method based on type
       if (element.type === 'polygon') {
         element.selectPolygon();
-      } else if (element.type === 'text') {
+      } else if (element.type === 'text' || element.type === 'symbol') {
         element.selectText();
       } else if (element.type === 'image') {
         element.selectImage();

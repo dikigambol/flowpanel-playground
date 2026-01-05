@@ -268,7 +268,20 @@ function CanvasEditor() {
 
     canvas.on('selection:cleared', () => {
       // Deselect element when clicking on empty area
-      // But not if element is in edit mode
+      const selectedEl = getSelectedElement();
+      
+      // If element is in edit mode, exit edit mode but keep it selected
+      if (selectedEl?.isEditMode) {
+        selectedEl.setEditMode(false);
+        // Re-select the polygon after exiting edit mode
+        setTimeout(() => {
+          if (selectedEl.type === 'polygon') {
+            selectedEl.selectPolygon();
+          }
+        }, 10);
+        return;
+      }
+      
       selectElement(null);
     });
 
@@ -276,7 +289,17 @@ function CanvasEditor() {
     canvas.on('mouse:dblclick', (opt) => {
       // Find if any element is in edit mode
       const selectedEl = getSelectedElement();
-      if (selectedEl?.isEditMode && !opt.target) {
+      if (!selectedEl?.isEditMode) return;
+
+      // If clicked on edge handle, add node at that edge
+      if (opt.target && opt.target._isEdgeHandle) {
+        const edgeIndex = opt.target._edgeIndex;
+        selectedEl.addNodeAtEdge?.(edgeIndex);
+        return;
+      }
+
+      // If clicked on empty area, add node at position
+      if (!opt.target) {
         const pointer = canvas.getPointer(opt.e);
         selectedEl.addNodeAtPosition?.(pointer);
       }
