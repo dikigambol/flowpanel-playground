@@ -43,6 +43,9 @@ function CanvasEditor() {
   const activeToolRef = useRef(activeTool);
   activeToolRef.current = activeTool;
 
+  const gridOnRef = useRef(gridOn);
+  gridOnRef.current = gridOn;
+
   const isDraggingRef = useRef(false);
   const lastPosRef = useRef({ x: 0, y: 0 });
   const baseGridSpacing = 50;
@@ -60,10 +63,15 @@ function CanvasEditor() {
     const width = gridCanvas.width;
     const height = gridCanvas.height;
 
+    // Always clear the grid canvas first
+    ctx.clearRect(0, 0, width, height);
+
+    // Use ref to get latest gridOn value (for event handlers that capture old closure)
+    if (!gridOnRef.current) return; // If grid is off, stop here after clearing
+
+    // Draw background only if grid is on
     ctx.fillStyle = '#1a1a2e';
     ctx.fillRect(0, 0, width, height);
-
-    if (!gridOn) return;
 
     const zoom = fabricCanvas.getZoom();
     const vpt = fabricCanvas.viewportTransform;
@@ -237,6 +245,8 @@ function CanvasEditor() {
         const obj = e.selected[0];
         if (obj._polygonElement) {
           selectElement(obj._polygonElement.id);
+        } else if (obj._textElement) {
+          selectElement(obj._textElement.id);
         }
       }
     });
@@ -246,6 +256,8 @@ function CanvasEditor() {
         const obj = e.selected[0];
         if (obj._polygonElement) {
           selectElement(obj._polygonElement.id);
+        } else if (obj._textElement) {
+          selectElement(obj._textElement.id);
         }
       }
     });
@@ -340,6 +352,10 @@ function CanvasEditor() {
   // Handle update element properties
   const handleUpdateProperties = (properties) => {
     updateSelectedElement(properties);
+    // Re-select to maintain selection after update
+    if (selectedElementId) {
+      selectElement(selectedElementId);
+    }
   };
 
   // Handle delete element

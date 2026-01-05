@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
-import { createPolygonElement } from '../elements';
+import { createPolygonElement, createTextElement } from '../elements';
 
 /**
  * useCanvasEditor - Custom hook untuk state management canvas editor
@@ -83,7 +83,31 @@ export function useCanvasEditor() {
         });
         break;
 
-      // Future: case 'text': ...
+      case 'text':
+        element = createTextElement(canvas, {
+          text: options.text || 'Double click to edit',
+          left: canvasCenter.x - 100 + offset,
+          top: canvasCenter.y + offset,
+          fontSize: options.fontSize || 24,
+          fontColor: options.fontColor || '#ffffff',
+          fontFamily: options.fontFamily || 'Arial',
+          fontWeight: options.fontWeight || 'normal',
+          fontStyle: options.fontStyle || 'normal',
+          underline: options.underline || false,
+          textAlign: options.textAlign || 'left',
+          onSelect: (el) => {
+            setSelectedElementId(el.id);
+          },
+          onUpdate: (el) => {
+            // Trigger re-render when element updates
+            setElements(prev => [...prev]);
+          },
+          onDelete: (el) => {
+            removeElementFromState(el.id);
+          },
+        });
+        break;
+
       // Future: case 'image': ...
 
       default:
@@ -103,7 +127,13 @@ export function useCanvasEditor() {
 
       // Select new element
       setSelectedElementId(element.id);
-      element.selectPolygon();
+      
+      // Call appropriate select method based on type
+      if (element.type === 'polygon') {
+        element.selectPolygon();
+      } else if (element.type === 'text') {
+        element.selectText();
+      }
 
       return element;
     }
@@ -197,8 +227,10 @@ export function useCanvasEditor() {
     const element = elementsMapRef.current.get(id);
     if (element) {
       element.update(properties);
+      // Trigger re-render
+      setElements([...elements]);
     }
-  }, []);
+  }, [elements]);
 
   /**
    * Update selected element properties

@@ -53,16 +53,11 @@ function Sidebar({ onAddElement, collapsed = true, onToggleCollapse }) {
         ⬡
       </button>
 
-      {/* Future: Add Text */}
+      {/* Add Text */}
       <button
         onClick={() => onAddElement('text')}
-        style={{
-          ...sidebarButtonStyle(false),
-          opacity: 0.5,
-          cursor: 'not-allowed',
-        }}
-        title="Add Text (Coming Soon)"
-        disabled
+        style={sidebarButtonStyle(false)}
+        title="Add Text"
       >
         T
       </button>

@@ -22,6 +22,8 @@ export class PolygonElement extends BaseElement {
       strokeColor: options.strokeColor || '#1e40af',
       hasBorder: options.hasBorder !== undefined ? options.hasBorder : true,
       strokeWidth: options.strokeWidth || 3,
+      shapeType: options.shapeType || 'freeform',
+      transparentFill: options.transparentFill || false,
       points: options.points || [
         { x: 200, y: 150 },
         { x: 400, y: 150 },
@@ -53,8 +55,14 @@ export class PolygonElement extends BaseElement {
     // Merge new properties
     Object.assign(this.properties, newProperties);
     
+    // If shapeType changed, regenerate points
+    if (newProperties.shapeType && newProperties.shapeType !== 'freeform') {
+      const newPoints = this._generatePointsForShape(newProperties.shapeType);
+      this.properties.points = newPoints;
+    }
+    
     // If points changed, rebuild polygon
-    if (newProperties.points) {
+    if (newProperties.points || newProperties.shapeType) {
       this._rebuildPolygon(this.isEditMode);
       if (this.isEditMode) {
         this._createEdgeLines();
@@ -249,7 +257,7 @@ export class PolygonElement extends BaseElement {
 
     // Create new polygon with absolute points
     const polygon = new Polygon([...currentPoints], {
-      fill: this.properties.fillColor,
+      fill: this.properties.transparentFill ? null : this.properties.fillColor,
       stroke: this.properties.hasBorder ? this.properties.strokeColor : null,
       strokeWidth: this.properties.hasBorder ? this.properties.strokeWidth : 0,
       strokeUniform: true,
@@ -287,7 +295,7 @@ export class PolygonElement extends BaseElement {
     if (!this.polygon) return;
 
     this.polygon.set({
-      fill: this.properties.fillColor,
+      fill: this.properties.transparentFill ? null : this.properties.fillColor,
       stroke: this.properties.hasBorder ? this.properties.strokeColor : null,
       strokeWidth: this.properties.hasBorder ? this.properties.strokeWidth : 0,
     });
@@ -465,6 +473,95 @@ export class PolygonElement extends BaseElement {
       });
     });
     this.canvas.requestRenderAll();
+  }
+
+  /**
+   * Generate points for preset shapes
+   * @param {string} shapeType - Type of shape
+   * @returns {Array} Array of points
+   */
+  _generatePointsForShape(shapeType) {
+    // Calculate center and size from current points
+    const points = this.properties.points;
+    if (points.length === 0) return points;
+
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    points.forEach(p => {
+      minX = Math.min(minX, p.x);
+      minY = Math.min(minY, p.y);
+      maxX = Math.max(maxX, p.x);
+      maxY = Math.max(maxY, p.y);
+    });
+
+    const centerX = (minX + maxX) / 2;
+    const centerY = (minY + maxY) / 2;
+    const width = maxX - minX;
+    const height = maxY - minY;
+    const size = Math.max(width, height) / 2;
+
+    switch (shapeType) {
+      case 'triangle':
+        return [
+          { x: centerX, y: centerY - size },
+          { x: centerX - size * 0.866, y: centerY + size * 0.5 },
+          { x: centerX + size * 0.866, y: centerY + size * 0.5 },
+        ];
+      case 'square':
+        return [
+          { x: centerX - size, y: centerY - size },
+          { x: centerX + size, y: centerY - size },
+          { x: centerX + size, y: centerY + size },
+          { x: centerX - size, y: centerY + size },
+        ];
+      case 'diamond':
+        return [
+          { x: centerX, y: centerY - size },
+          { x: centerX + size, y: centerY },
+          { x: centerX, y: centerY + size },
+          { x: centerX - size, y: centerY },
+        ];
+      case 'parallelogram':
+        return [
+          { x: centerX - size * 0.8, y: centerY - size },
+          { x: centerX + size * 1.2, y: centerY - size },
+          { x: centerX + size, y: centerY + size },
+          { x: centerX - size * 0.2, y: centerY + size },
+        ];
+      case 'pentagon':
+        const pentagonPoints = [];
+        for (let i = 0; i < 5; i++) {
+          const angle = (i * 2 * Math.PI) / 5 - Math.PI / 2;
+          pentagonPoints.push({
+            x: centerX + size * Math.cos(angle),
+            y: centerY + size * Math.sin(angle),
+          });
+        }
+        return pentagonPoints;
+      case 'hexagon':
+        const hexagonPoints = [];
+        for (let i = 0; i < 6; i++) {
+          const angle = (i * 2 * Math.PI) / 6;
+          hexagonPoints.push({
+            x: centerX + size * Math.cos(angle),
+            y: centerY + size * Math.sin(angle),
+          });
+        }
+        return hexagonPoints;
+      case 'circle':
+        // For circle, we'll create a circular polygon with many points
+        const circlePoints = [];
+        const numPoints = 32;
+        for (let i = 0; i < numPoints; i++) {
+          const angle = (i * 2 * Math.PI) / numPoints;
+          circlePoints.push({
+            x: centerX + size * Math.cos(angle),
+            y: centerY + size * Math.sin(angle),
+          });
+        }
+        return circlePoints;
+      default:
+        return points; // Keep current points for freeform
+    }
   }
 }
 
