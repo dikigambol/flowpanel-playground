@@ -30,6 +30,7 @@ function EditableBaseShape() {
   const [strokeWidth, setStrokeWidth] = useState(3);
   const [editMode, setEditMode] = useState(false);
   const [nodeCount, setNodeCount] = useState(4);
+  const [showDrawer, setShowDrawer] = useState(false);
 
   // Points disimpan sebagai absolute coordinates
   const pointsRef = useRef([
@@ -656,23 +657,6 @@ function EditableBaseShape() {
             </span>
           </div>
         )}
-
-        {/* Instructions */}
-        <div style={instructionsStyle}>
-          <strong style={{ color: '#60a5fa', fontSize: '14px' }}>📌 Cara Pakai:</strong>
-          <ul style={{ marginTop: '10px', paddingLeft: '20px', color: '#94a3b8', listStyle: 'disc' }}>
-            <li><strong>Normal Mode:</strong> Drag polygon untuk pindah, handles untuk resize/rotate</li>
-            <li><strong>Edit Mode:</strong>
-              <ul style={{ marginTop: '5px', paddingLeft: '20px', listStyle: 'circle' }}>
-                <li><strong>Drag node merah</strong> → pindahkan titik</li>
-                <li><strong>Double-click garis biru</strong> → tambah node baru di edge</li>
-                <li><strong>Double-click di area kosong</strong> → tambah node baru di posisi klik</li>
-                <li><strong>Pilih node (jadi hijau) + Delete/Backspace</strong> → hapus node</li>
-              </ul>
-            </li>
-          </ul>
-        </div>
-
       </div>
     </div>
   );
