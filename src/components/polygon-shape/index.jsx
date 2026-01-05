@@ -3,7 +3,7 @@ import { Canvas, Polygon, Circle, Line, util as fabricUtil } from 'fabric';
 import { canvasWrapperStyle, canvasStyle, drawerStyle, headerStyle, controlGroupStyle, labelStyle, inputRowStyle, colorInputStyle, rangeStyle, buttonStyle, checkboxStyle } from './style.js';
 
 /**
- * EditableBaseShape Component
+ * PolygonShape Component
  * 
  * Polygon editor dengan fitur:
  * - Ubah warna background (fill)
@@ -14,7 +14,7 @@ import { canvasWrapperStyle, canvasStyle, drawerStyle, headerStyle, controlGroup
  * 
  * @component
  */
-function EditableBaseShape() {
+function PolygonShape() {
   const canvasRef = useRef(null);
   const gridCanvasRef = useRef(null); // Separate canvas for grid
   const canvasInstanceRef = useRef(null);
@@ -876,4 +876,4 @@ function EditableBaseShape() {
   );
 }
 
-export default EditableBaseShape;
+export default PolygonShape;
