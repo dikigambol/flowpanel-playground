@@ -71,6 +71,7 @@ export const floatingToolbarStyle = {
   zIndex: 1000,
   backdropFilter: 'blur(8px)',
   border: '1px solid rgba(71, 85, 105, 0.3)',
+  fontFamily: "'Segoe UI', system-ui, sans-serif",
 };
 
 // ==================== Typography Styles ====================

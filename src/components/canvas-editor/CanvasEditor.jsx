@@ -183,6 +183,18 @@ function CanvasEditor() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [getSelectedElement, deleteSelectedElement, selectElement]);
 
+  // Update cursor based on active tool
+  useEffect(() => {
+    const canvas = getCanvas();
+    if (!canvas) return;
+
+    if (activeTool === 'pan') {
+      canvas.defaultCursor = 'grab';
+    } else {
+      canvas.defaultCursor = 'default';
+    }
+  }, [activeTool, getCanvas]);
+
   // Initialize canvas
   useEffect(() => {
     if (getCanvas()) return;
@@ -267,6 +279,7 @@ function CanvasEditor() {
       isDraggingRef.current = true;
       lastPosRef.current = { x: evt.clientX, y: evt.clientY };
       canvas.selection = false;
+      canvas.defaultCursor = 'grabbing';
     });
 
     canvas.on('mouse:move', (opt) => {
@@ -286,6 +299,9 @@ function CanvasEditor() {
     canvas.on('mouse:up', () => {
       isDraggingRef.current = false;
       canvas.selection = true;
+      if (activeToolRef.current === 'pan') {
+        canvas.defaultCursor = 'grab';
+      }
     });
 
     // Zoom functionality
@@ -386,8 +402,7 @@ function CanvasEditor() {
           borderRadius: '6px',
           padding: '6px 12px',
           fontSize: '11px',
-          color: '#94a3b8',
-          zIndex: 1000,
+          color: '#94a3b8',          fontFamily: "'Segoe UI', system-ui, sans-serif",          zIndex: 1000,
         }}>
           Elements: {elements.length}
         </div>
