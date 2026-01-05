@@ -189,8 +189,10 @@ function CanvasEditor() {
     if (!canvas) return;
 
     if (activeTool === 'pan') {
+      canvas.hoverCursor = 'grab';
       canvas.defaultCursor = 'grab';
     } else {
+      canvas.hoverCursor = 'default';
       canvas.defaultCursor = 'default';
     }
   }, [activeTool, getCanvas]);
@@ -280,6 +282,7 @@ function CanvasEditor() {
       lastPosRef.current = { x: evt.clientX, y: evt.clientY };
       canvas.selection = false;
       canvas.defaultCursor = 'grabbing';
+      canvas.hoverCursor = 'grabbing';
     });
 
     canvas.on('mouse:move', (opt) => {
@@ -294,6 +297,10 @@ function CanvasEditor() {
       lastPosRef.current = { x: evt.clientX, y: evt.clientY };
       drawGrid();
       canvas.requestRenderAll();
+      
+      // Ensure cursor is grabbing during drag
+      canvas.defaultCursor = 'grabbing';
+      canvas.hoverCursor = 'grabbing';
     });
 
     canvas.on('mouse:up', () => {
@@ -301,6 +308,7 @@ function CanvasEditor() {
       canvas.selection = true;
       if (activeToolRef.current === 'pan') {
         canvas.defaultCursor = 'grab';
+        canvas.hoverCursor = 'grab';
       }
     });
 
