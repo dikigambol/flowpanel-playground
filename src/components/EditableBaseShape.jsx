@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Canvas, Polygon, Circle, Line } from 'fabric';
+import { Canvas, Polygon, Circle, Line, util as fabricUtil } from 'fabric';
 
 /**
  * EditableBaseShape Component
@@ -68,6 +68,28 @@ function EditableBaseShape() {
     edgeLinesRef.current = [];
   };
 
+  // Helper: Get absolute vertex coordinates of a transformed polygon
+  const getAbsoluteVertices = (polygon) => {
+    if (!polygon || !canvasInstanceRef.current) return [];
+
+    // Get transformation matrix yang mencakup semua transformasi (position, scale, rotation)
+    const matrix = polygon.calcTransformMatrix();
+    
+    const absoluteVertices = polygon.points.map(p => {
+      // Transform dari local coordinates ke canvas coordinates
+      // Local coordinates: point relative to pathOffset
+      const localX = p.x - polygon.pathOffset.x;
+      const localY = p.y - polygon.pathOffset.y;
+      
+      // Apply transformation matrix
+      const transformed = fabricUtil.transformPoint({ x: localX, y: localY }, matrix);
+      
+      return { x: transformed.x, y: transformed.y };
+    });
+    
+    return absoluteVertices;
+  };
+
   // Update polygon visual only (tanpa recreate)
   const updatePolygonStyle = () => {
     const polygon = polygonRef.current;
@@ -87,7 +109,9 @@ function EditableBaseShape() {
     const canvas = canvasInstanceRef.current;
     if (!canvas) return;
 
-    const points = pointsRef.current;
+    const currentPoints = pointsRef.current; // These are absolute canvas coordinates
+    
+    if (currentPoints.length < 3) return;
     
     // Hapus polygon lama
     if (polygonRef.current) {
@@ -96,8 +120,8 @@ function EditableBaseShape() {
       polygonRef.current = null;
     }
 
-    // Buat polygon baru
-    const polygon = new Polygon([...points], {
+    // Buat polygon baru langsung dengan absolute points
+    const polygon = new Polygon([...currentPoints], {
       fill: fillColor,
       stroke: hasBorder ? strokeColor : null,
       strokeWidth: hasBorder ? strokeWidth : 0,
@@ -128,7 +152,7 @@ function EditableBaseShape() {
     }
     
     canvas.requestRenderAll();
-    setNodeCount(points.length);
+    setNodeCount(currentPoints.length);
   };
 
   // Create edge lines
@@ -172,9 +196,6 @@ function EditableBaseShape() {
     edgeLinesRef.current.forEach(line => {
       canvas.sendObjectToBack(line);
     });
-    if (polygonRef.current) {
-      canvas.sendObjectToBack(polygonRef.current);
-    }
 
     canvas.requestRenderAll();
   };
@@ -213,12 +234,8 @@ function EditableBaseShape() {
         const idx = node.nodeIndex;
         pointsRef.current[idx] = { x: node.left, y: node.top };
         
-        // Update polygon points directly tanpa recreate
-        const polygon = polygonRef.current;
-        if (polygon) {
-          polygon.set({ points: [...pointsRef.current] });
-          polygon.setCoords();
-        }
+        // Rebuild polygon dengan points baru
+        rebuildPolygon(true);
         
         // Update edge lines positions
         updateEdgeLinesPositions();
@@ -333,6 +350,10 @@ function EditableBaseShape() {
     if (newEditMode) {
       // Masuk edit mode
       selectedNodeIndexRef.current = null;
+      const currentPolygon = polygonRef.current;
+      if (currentPolygon) {
+        pointsRef.current = getAbsoluteVertices(currentPolygon);
+      }
       rebuildPolygon(true);
       createEdgeLines();
       createNodes();
@@ -384,6 +405,15 @@ function EditableBaseShape() {
         const { clientWidth, clientHeight } = canvasContainerRef.current;
         canvasInstanceRef.current.setDimensions({ width: clientWidth, height: clientHeight });
         canvasInstanceRef.current.requestRenderAll();
+        // After resize, if in edit mode, redraw nodes/lines
+        if (editModeRef.current) {
+          if (polygonRef.current) {
+            pointsRef.current = getAbsoluteVertices(polygonRef.current);
+          }
+          rebuildPolygon(true);
+          createEdgeLines();
+          createNodes();
+        }
       }
     };
 
@@ -402,34 +432,14 @@ function EditableBaseShape() {
       if (opt.target) return; // Jangan add jika klik pada object
       
       const pointer = canvas.getPointer(opt.e);
-      const points = pointsRef.current;
       
-      // Find nearest edge
-      let minDist = Infinity;
-      let nearestEdge = 0;
-      
-      for (let i = 0; i < points.length; i++) {
-        const p1 = points[i];
-        const p2 = points[(i + 1) % points.length];
-        const dist = pointToSegmentDistance(pointer.x, pointer.y, p1.x, p1.y, p2.x, p2.y);
-        if (dist < minDist) {
-          minDist = dist;
-          nearestEdge = i;
-        }
-      }
-      
-      // Threshold untuk add node (misal 20px)
-      if (minDist < 20) {
-        addNodeAtEdge(nearestEdge);
-      } else {
-        // Jika tidak dekat edge manapun, tambahkan di posisi klik sebagai titik baru
-        pointsRef.current.push({ x: pointer.x, y: pointer.y });
-        rebuildPolygon(true);
-        createEdgeLines();
-        createNodes();
-        selectedNodeIndexRef.current = pointsRef.current.length - 1;
-        highlightSelectedNode();
-      }
+      // Simple add node at click position if not near any edge
+      pointsRef.current.push({ x: pointer.x, y: pointer.y });
+      // Automatically select the newly added node
+      selectedNodeIndexRef.current = pointsRef.current.length - 1;
+      rebuildPolygon(true);
+      createEdgeLines();
+      createNodes();
     });
 
     // Initial polygon
@@ -441,30 +451,6 @@ function EditableBaseShape() {
       resizeObserver.disconnect();
     };
   }, []);
-
-  // Helper: jarak titik ke segment garis
-  const pointToSegmentDistance = (px, py, x1, y1, x2, y2) => {
-    const A = px - x1;
-    const B = py - y1;
-    const C = x2 - x1;
-    const D = y2 - y1;
-
-    const dot = A * C + B * D;
-    const lenSq = C * C + D * D;
-    let param = lenSq !== 0 ? dot / lenSq : -1;
-
-    let xx, yy;
-    if (param < 0) {
-      xx = x1; yy = y1;
-    } else if (param > 1) {
-      xx = x2; yy = y2;
-    } else {
-      xx = x1 + param * C;
-      yy = y1 + param * D;
-    }
-
-    return Math.sqrt((px - xx) ** 2 + (py - yy) ** 2);
-  };
 
   // ========== STYLES ==========
   const mainContainerStyle = {
