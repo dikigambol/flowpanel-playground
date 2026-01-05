@@ -53,24 +53,33 @@ export class PolygonElement extends BaseElement {
    * @param {Object} newProperties - Properties to update
    */
   update(newProperties) {
+    // Check if shapeType is actually changing (not just present in newProperties)
+    const oldShapeType = this.properties.shapeType;
+    const shapeTypeChanged = newProperties.shapeType !== undefined && 
+                             newProperties.shapeType !== oldShapeType;
+    
     // Merge new properties
     Object.assign(this.properties, newProperties);
     
-    // If shapeType changed, regenerate points
-    if (newProperties.shapeType && newProperties.shapeType !== 'freeform') {
-      const newPoints = this._generatePointsForShape(newProperties.shapeType);
+    // If shapeType actually changed to a preset shape, regenerate points at current position
+    if (shapeTypeChanged && newProperties.shapeType !== 'freeform') {
+      // Get current center position from transformed polygon
+      const currentCenter = this._getCurrentCenter();
+      
+      // Generate new shape points
+      const newPoints = this._generatePointsForShape(newProperties.shapeType, currentCenter);
       this.properties.points = newPoints;
     }
     
-    // If points changed, rebuild polygon
-    if (newProperties.points || newProperties.shapeType) {
+    // If points changed or shapeType changed, rebuild polygon
+    if (newProperties.points || shapeTypeChanged) {
       this._rebuildPolygon(this.isEditMode);
       if (this.isEditMode) {
         this._createEdgeLines();
         this._createNodes();
       }
     } else {
-      // Just update style
+      // Just update style - no rebuild needed
       this._updatePolygonStyle();
     }
     
@@ -319,6 +328,42 @@ export class PolygonElement extends BaseElement {
       const transformed = fabricUtil.transformPoint({ x: localX, y: localY }, matrix);
       return { x: transformed.x, y: transformed.y };
     });
+  }
+
+  /**
+   * Get current center position of the polygon (accounting for transforms)
+   * @returns {Object} {x, y} center position
+   */
+  _getCurrentCenter() {
+    if (this.polygon) {
+      // Get absolute vertices after transformation
+      const absVertices = this._getAbsoluteVertices(this.polygon);
+      if (absVertices.length > 0) {
+        let sumX = 0, sumY = 0;
+        absVertices.forEach(p => {
+          sumX += p.x;
+          sumY += p.y;
+        });
+        return {
+          x: sumX / absVertices.length,
+          y: sumY / absVertices.length,
+        };
+      }
+    }
+    
+    // Fallback to points center
+    const points = this.properties.points;
+    if (points.length === 0) return { x: 300, y: 300 };
+    
+    let sumX = 0, sumY = 0;
+    points.forEach(p => {
+      sumX += p.x;
+      sumY += p.y;
+    });
+    return {
+      x: sumX / points.length,
+      y: sumY / points.length,
+    };
   }
 
   /**
@@ -618,9 +663,10 @@ export class PolygonElement extends BaseElement {
   /**
    * Generate points for preset shapes
    * @param {string} shapeType - Type of shape
+   * @param {Object} customCenter - Optional custom center {x, y} to use instead of calculating from points
    * @returns {Array} Array of points
    */
-  _generatePointsForShape(shapeType) {
+  _generatePointsForShape(shapeType, customCenter = null) {
     // Calculate center and size from current points
     const points = this.properties.points;
     if (points.length === 0) return points;
@@ -633,8 +679,9 @@ export class PolygonElement extends BaseElement {
       maxY = Math.max(maxY, p.y);
     });
 
-    const centerX = (minX + maxX) / 2;
-    const centerY = (minY + maxY) / 2;
+    // Use custom center if provided (for maintaining position after drag)
+    const centerX = customCenter ? customCenter.x : (minX + maxX) / 2;
+    const centerY = customCenter ? customCenter.y : (minY + maxY) / 2;
     const width = maxX - minX;
     const height = maxY - minY;
     const size = Math.max(width, height) / 2;

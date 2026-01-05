@@ -1,0 +1,33 @@
+/* Custom Scrollbar Styles for Properties Drawer */
+
+.properties-drawer::-webkit-scrollbar {
+  width: 6px;
+}
+
+.properties-drawer::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.properties-drawer::-webkit-scrollbar-thumb {
+  background: #64748b;  /* Gray color */
+  border-radius: 3px;
+  transition: background-color 0.2s ease;
+}
+
+.properties-drawer::-webkit-scrollbar-thumb:hover {
+  background: #475569;  /* Darker gray on hover */
+}
+
+.properties-drawer::-webkit-scrollbar-thumb:active {
+  background: #334155;  /* Even darker gray when active */
+}
+
+/* Firefox scrollbar styling */
+.properties-drawer {
+  scrollbar-width: thin;
+  scrollbar-color: #64748b transparent;
+}
+
+.properties-drawer:hover {
+  scrollbar-color: #475569 transparent;
+}

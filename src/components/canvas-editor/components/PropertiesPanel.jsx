@@ -54,9 +54,10 @@ function PropertiesPanel({ element, onUpdate, onDelete }) {
   }
 
   const handlePropertyChange = (key, value) => {
-    const newProperties = { ...properties, [key]: value };
-    setProperties(newProperties);
-    onUpdate?.(newProperties);
+    // Update local state
+    setProperties(prev => ({ ...prev, [key]: value }));
+    // Only send the changed property to avoid overwriting transformed positions
+    onUpdate?.({ [key]: value });
   };
 
   const toggleEditMode = () => {
@@ -109,10 +110,13 @@ function PropertiesPanel({ element, onUpdate, onDelete }) {
   };
 
   return (
-    <div style={{
-      ...drawerStyle,
-      transition: 'opacity 0.2s ease, transform 0.2s ease',
-    }}>
+    <div 
+      className="properties-drawer"
+      style={{
+        ...drawerStyle,
+        transition: 'opacity 0.2s ease, transform 0.2s ease',
+      }}
+    >
       {/* Header */}
       <h1 style={headerStyle}>
         {getElementIcon()} {getElementDisplayName()}
