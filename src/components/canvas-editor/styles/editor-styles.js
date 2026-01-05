@@ -26,6 +26,7 @@ export const drawerStyle = {
   top: '20px',
   right: '20px',
   width: '250px',
+  maxHeight: 'calc(100vh - 80px)',
   backgroundColor: '#15152a',
   border: '1px solid #2a2a4a',
   borderRadius: '12px',

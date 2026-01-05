@@ -158,6 +158,30 @@ function PolygonProperties({ properties, onPropertyChange, editMode, nodeCount, 
           </span>
         </div>
       )}
+
+      {/* Edit Nodes Tips */}
+      {editMode && (
+        <div style={controlGroupStyle}>
+          <span style={labelStyle}>💡 Edit Tips</span>
+          <div style={{ ...smallTextStyle, lineHeight: '1.4', marginTop: '4px' }}>
+            • <strong>Add Node:</strong> Double-click on blue circles<br/>
+            • <strong>Move Edge:</strong> Drag blue circles to reshape<br/>
+            • <strong>Delete Node:</strong> Select node then click "Delete Node"
+          </div>
+        </div>
+      )}
+
+      {/* General Polygon Tips */}
+      {!editMode && (
+        <div style={controlGroupStyle}>
+          <span style={labelStyle}>💡 Usage Tips</span>
+          <div style={{ ...smallTextStyle, lineHeight: '1.4', marginTop: '4px' }}>
+            • Click "Edit Shape" to modify nodes and edges<br/>
+            • Change shape type to create presets (triangle, square, etc.)<br/>
+            • Toggle border on/off and adjust thickness
+          </div>
+        </div>
+      )}
     </>
   );
 }
