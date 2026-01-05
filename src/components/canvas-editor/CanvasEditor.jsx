@@ -33,7 +33,7 @@ function CanvasEditor() {
   } = useCanvasEditor();
 
   // UI State
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   
   // Canvas controls
   const [gridOn, setGridOn] = useState(true);

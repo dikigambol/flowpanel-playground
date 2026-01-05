@@ -8,13 +8,13 @@ import { sidebarStyle, sidebarButtonStyle } from '../styles';
  * @param {boolean} props.collapsed - Whether sidebar is collapsed
  * @param {Function} props.onToggleCollapse - Toggle collapse callback
  */
-function Sidebar({ onAddElement, collapsed = false, onToggleCollapse }) {
+function Sidebar({ onAddElement, collapsed = true, onToggleCollapse }) {
   if (collapsed) {
     return (
       <div style={{
         ...sidebarStyle,
-        width: '40px',
-        padding: '8px',
+        width: '33px',
+        padding: '4px',
       }}>
         <button
           onClick={onToggleCollapse}
@@ -48,7 +48,7 @@ function Sidebar({ onAddElement, collapsed = false, onToggleCollapse }) {
       <button
         onClick={() => onAddElement('polygon')}
         style={sidebarButtonStyle(false)}
-        title="Add Polygon"
+        title="Add Polyline/Polygon Shape"
       >
         ⬡
       </button>
