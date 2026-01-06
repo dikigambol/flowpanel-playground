@@ -7,7 +7,7 @@ import {
   mutedTextStyle,
   verticalDividerStyle,
 } from '../styles';
-import { MousePointer2, Hand, Maximize2, Group, Ungroup } from 'lucide-react';
+import { MousePointer2, Hand, Maximize2, Group, Ungroup, FileText, Image } from 'lucide-react';
 
 /**
  * FloatingToolbar - Toolbar floating untuk canvas controls
@@ -22,6 +22,8 @@ import { MousePointer2, Hand, Maximize2, Group, Ungroup } from 'lucide-react';
  * @param {Array<string>} props.selectedElementIds - Array of selected element IDs
  * @param {Function} props.onGroup - Callback saat group clicked
  * @param {Function} props.onUngroup - Callback saat ungroup clicked
+ * @param {Function} props.onExportJSON - Callback saat export JSON clicked
+ * @param {Function} props.onExportPNG - Callback saat export PNG clicked
  * @param {Function} props.getCanvas - Function to get canvas instance
  */
 function FloatingToolbar({ 
@@ -34,6 +36,8 @@ function FloatingToolbar({
   selectedElementIds = [],
   onGroup,
   onUngroup,
+  onExportJSON,
+  onExportPNG,
   getCanvas,
 }) {
   // Check if active object is a group or active selection
@@ -130,6 +134,42 @@ function FloatingToolbar({
       {/* Zoom Level */}
       <div style={{ ...mutedTextStyle, minWidth: '40px', textAlign: 'center' }}>
         {(zoomLevel * 100).toFixed(0)}%
+      </div>
+      
+      {/* Export Buttons */}
+      <div style={{ display: 'flex', gap: '4px' }}>
+        <button
+          onClick={onExportJSON}
+          title="Export as JSON"
+          style={{ 
+            ...buttonStyle(false), 
+            padding: '4px 8px', 
+            fontSize: '11px',
+            minWidth: 'auto',
+            margin: 0,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+          }}
+        >
+          <FileText size={14} /> JSON
+        </button>
+        <button
+          onClick={onExportPNG}
+          title="Export as PNG"
+          style={{ 
+            ...buttonStyle(false), 
+            padding: '4px 8px', 
+            fontSize: '11px',
+            minWidth: 'auto',
+            margin: 0,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+          }}
+        >
+          <Image size={14} /> PNG
+        </button>
       </div>
       
       {/* Fit View Button */}

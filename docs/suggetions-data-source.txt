@@ -1,0 +1,29 @@
+# Suggestions for Data Source Integration in JSON Export/Import
+
+Lebih masuk akal untuk menyimpan konfigurasi data source (seperti `machineId`, `dataSourceType`, `apiEndpoint`, dll.) di JSON, bukan status statis. Karena status bersifat real-time, saat load JSON, sistem bisa langsung terhubung ke data source untuk mendapatkan status terkini.
+
+## Recommended Approach
+- **Save to JSON**: Custom properties seperti `machineId`, `dataSourceConfig` (endpoint, authentication, dll.)
+- **Don't save status**: Karena status berubah secara real-time, biarkan di-fetch dari API saat load
+- **Auto-sync**: Saat import JSON, elemen langsung subscribe ke data source untuk update status secara otomatis
+
+## Implementation Plan
+Modifikasi kode agar:
+
+### 1. PolygonElement & BezierLineElement
+- Tambahkan properti `machineId`, `dataSourceType`, dll.
+
+### 2. Export JSON
+- Simpan custom properties ini ke Fabric object
+
+### 3. Import JSON
+- Load custom properties, lalu auto-connect ke data source untuk real-time updates
+
+### 4. Properties Panel
+- Tambahkan input untuk `machineId` dan konfigurasi data source
+
+## Benefits
+Ini akan membuat JSON sebagai "template" yang bisa di-reuse dengan data real-time yang berbeda, memberikan fleksibilitas maksimal untuk berbagai sumber data seperti Grafana atau Kibana.
+
+## Next Steps
+Jika setuju dengan pendekatan ini, implementasi bisa dilakukan dengan fokus pada penyimpanan konfigurasi data source. Ada detail lain yang ingin disesuaikan?

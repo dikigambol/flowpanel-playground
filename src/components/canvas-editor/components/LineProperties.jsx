@@ -78,13 +78,13 @@ function BezierLineProperties({ properties, onPropertyChange, editMode, segmentC
             }}
           >
             <option value="">Default</option>
-            <option value="running">Running (Hijau)</option>
-            <option value="idle">Idle (Kuning)</option>
-            <option value="off">Off (Kuning)</option>
-            <option value="alarm">Alarm (Merah)</option>
-            <option value="maintenance">Maintenance (Biru)</option>
-            <option value="breakdown">Breakdown (Hitam)</option>
-            <option value="disconnected">Disconnected (Abu-abu)</option>
+            <option value="running">Running</option>
+            <option value="idle">Idle</option>
+            <option value="off">Off</option>
+            <option value="alarm">Alarm</option>
+            <option value="maintenance">Maintenance</option>
+            <option value="breakdown">Breakdown</option>
+            <option value="disconnected">Disconnected</option>
           </select>
         </div>
       </div>

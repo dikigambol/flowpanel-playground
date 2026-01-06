@@ -159,6 +159,56 @@ function CanvasEditor() {
     canvas.requestRenderAll();
   }, [getCanvas, drawGrid]);
 
+  // Export canvas as JSON
+  const exportJSON = useCallback(() => {
+    const canvas = getCanvas();
+    if (!canvas) return;
+
+    try {
+      const json = canvas.toJSON();
+      const dataStr = JSON.stringify(json, null, 2);
+      const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+      
+      const exportFileDefaultName = `canvas-${new Date().toISOString().split('T')[0]}.json`;
+      
+      const linkElement = document.createElement('a');
+      linkElement.setAttribute('href', dataUri);
+      linkElement.setAttribute('download', exportFileDefaultName);
+      linkElement.click();
+      
+      console.log('Canvas exported as JSON');
+    } catch (error) {
+      console.error('Failed to export JSON:', error);
+      alert('Failed to export JSON. Check console for details.');
+    }
+  }, [getCanvas]);
+
+  // Export canvas as PNG
+  const exportPNG = useCallback(() => {
+    const canvas = getCanvas();
+    if (!canvas) return;
+
+    try {
+      const dataURL = canvas.toDataURL({
+        format: 'png',
+        quality: 1,
+        multiplier: 2, // Higher resolution
+      });
+      
+      const exportFileDefaultName = `canvas-${new Date().toISOString().split('T')[0]}.png`;
+      
+      const linkElement = document.createElement('a');
+      linkElement.setAttribute('href', dataURL);
+      linkElement.setAttribute('download', exportFileDefaultName);
+      linkElement.click();
+      
+      console.log('Canvas exported as PNG');
+    } catch (error) {
+      console.error('Failed to export PNG:', error);
+      alert('Failed to export PNG. Check console for details.');
+    }
+  }, [getCanvas]);
+
   // Redraw grid when gridOn or zoom changes
   useEffect(() => {
     drawGrid();
@@ -524,6 +574,8 @@ function CanvasEditor() {
           selectedElementIds={selectedElementIds}
           onGroup={groupSelectedElements}
           onUngroup={ungroupSelectedElement}
+          onExportJSON={exportJSON}
+          onExportPNG={exportPNG}
           getCanvas={getCanvas}
         />
 
