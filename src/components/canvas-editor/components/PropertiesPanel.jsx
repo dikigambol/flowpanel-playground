@@ -11,7 +11,7 @@ import PolygonProperties from './PolygonProperties';
 import TextProperties from './TextProperties';
 import ImageProperties from './ImageProperties';
 import LineProperties from './LineProperties';
-import { Square, Type, Image, Zap, Minus, Trash2 } from 'lucide-react';
+import { Square, Type, Image, Zap, Minus, Trash2, ChevronUp, ChevronDown } from 'lucide-react';
 
 /**
  * PropertiesPanel - Panel untuk mengedit properties elemen yang dipilih
@@ -182,9 +182,46 @@ function PropertiesPanel({ element, onUpdate, onDelete }) {
         />
       )}
 
-      {/* Delete Element */}
+      {/* Element Actions */}
       <div style={controlGroupStyle}>
         <span style={labelStyle}>Element Actions</span>
+        
+        {/* Layer Ordering */}
+        <div style={{ display: 'flex', gap: '4px', marginBottom: '8px' }}>
+          <button
+            onClick={() => element.bringToFront?.()}
+            style={{
+              ...buttonStyle(false),
+              padding: '6px 8px',
+              fontSize: '11px',
+              flex: 1,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '4px',
+            }}
+            title="Bring to Front"
+          >
+            <ChevronUp size={14} /> Front
+          </button>
+          <button
+            onClick={() => element.sendToBack?.()}
+            style={{
+              ...buttonStyle(false),
+              padding: '6px 8px',
+              fontSize: '11px',
+              flex: 1,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '4px',
+            }}
+            title="Send to Back"
+          >
+            <ChevronDown size={14} /> Back
+          </button>
+        </div>
+        
         <button
           onClick={onDelete}
           style={{
