@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import {
   floatingToolbarStyle,
   iconButtonStyle,
@@ -6,7 +7,7 @@ import {
   mutedTextStyle,
   verticalDividerStyle,
 } from '../styles';
-import { MousePointer2, Hand, Maximize2 } from 'lucide-react';
+import { MousePointer2, Hand, Maximize2, Group, Ungroup } from 'lucide-react';
 
 /**
  * FloatingToolbar - Toolbar floating untuk canvas controls
@@ -18,6 +19,10 @@ import { MousePointer2, Hand, Maximize2 } from 'lucide-react';
  * @param {Function} props.onGridToggle - Callback saat grid toggle
  * @param {number} props.zoomLevel - Current zoom level (0-1 scale)
  * @param {Function} props.onFitView - Callback saat fit view clicked
+ * @param {Array<string>} props.selectedElementIds - Array of selected element IDs
+ * @param {Function} props.onGroup - Callback saat group clicked
+ * @param {Function} props.onUngroup - Callback saat ungroup clicked
+ * @param {Function} props.getCanvas - Function to get canvas instance
  */
 function FloatingToolbar({ 
   activeTool, 
@@ -25,8 +30,48 @@ function FloatingToolbar({
   gridOn, 
   onGridToggle, 
   zoomLevel, 
-  onFitView 
+  onFitView,
+  selectedElementIds = [],
+  onGroup,
+  onUngroup,
+  getCanvas,
 }) {
+  // Check if active object is a group or active selection
+  const [isGroupSelected, setIsGroupSelected] = useState(false);
+  const [canGroup, setCanGroup] = useState(false);
+  
+  useEffect(() => {
+    if (!getCanvas) return;
+    
+    const canvas = getCanvas();
+    if (!canvas) return;
+    
+    const checkSelection = () => {
+      const activeObject = canvas.getActiveObject();
+      const activeObjects = canvas.getActiveObjects();
+      
+      // Can group if multiple objects selected (activeSelection)
+      const hasMultipleSelected = activeObjects.length >= 2;
+      setCanGroup(hasMultipleSelected);
+      
+      // Can ungroup if a group is selected
+      setIsGroupSelected(activeObject?.type === 'group');
+    };
+    
+    // Check initially
+    checkSelection();
+    
+    // Listen to selection changes
+    canvas.on('selection:created', checkSelection);
+    canvas.on('selection:updated', checkSelection);
+    canvas.on('selection:cleared', checkSelection);
+    
+    return () => {
+      canvas.off('selection:created', checkSelection);
+      canvas.off('selection:updated', checkSelection);
+      canvas.off('selection:cleared', checkSelection);
+    };
+  }, [getCanvas, selectedElementIds]); // Re-run when selection changes
   return (
     <div style={floatingToolbarStyle}>
       {/* Tool Buttons */}
@@ -44,6 +89,30 @@ function FloatingToolbar({
           style={iconButtonStyle(activeTool === 'pan')}
         >
           <Hand size={16} />
+        </button>
+        <button
+          onClick={onGroup}
+          title="Group (Ctrl+G)"
+          disabled={!canGroup}
+          style={{
+            ...iconButtonStyle(false),
+            opacity: !canGroup ? 0.5 : 1,
+            cursor: !canGroup ? 'not-allowed' : 'pointer',
+          }}
+        >
+          <Group size={16} />
+        </button>
+        <button
+          onClick={onUngroup}
+          title="Ungroup"
+          disabled={!isGroupSelected}
+          style={{
+            ...iconButtonStyle(false),
+            opacity: !isGroupSelected ? 0.5 : 1,
+            cursor: !isGroupSelected ? 'not-allowed' : 'pointer',
+          }}
+        >
+          <Ungroup size={16} />
         </button>
       </div>
 

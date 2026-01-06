@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
+import { Group, util } from 'fabric';
 import { createPolygonElement, createTextElement, createImageElement, createBezierLineElement } from '../elements';
 
 /**
@@ -13,6 +14,7 @@ import { createPolygonElement, createTextElement, createImageElement, createBezi
 export function useCanvasEditor() {
   const [elements, setElements] = useState([]);
   const [selectedElementId, setSelectedElementId] = useState(null);
+  const [selectedElementIds, setSelectedElementIds] = useState([]); // Multiple selection
   const canvasRef = useRef(null);
   const elementsMapRef = useRef(new Map()); // Map id -> element instance
 
@@ -273,13 +275,22 @@ export function useCanvasEditor() {
   }, []);
 
   /**
-   * Delete selected element
+   * Delete selected element(s)
    */
   const deleteSelectedElement = useCallback(() => {
-    if (selectedElementId) {
+    // Delete all selected elements if multiple selection
+    if (selectedElementIds.length > 1) {
+      selectedElementIds.forEach(id => {
+        deleteElement(id);
+      });
+      setSelectedElementIds([]);
+      setSelectedElementId(null);
+    } else if (selectedElementId) {
       deleteElement(selectedElementId);
+      setSelectedElementId(null);
+      setSelectedElementIds([]);
     }
-  }, [selectedElementId, deleteElement]);
+  }, [selectedElementId, selectedElementIds, deleteElement]);
 
   /**
    * Get element by id
@@ -302,10 +313,92 @@ export function useCanvasEditor() {
   /**
    * Select element by id
    * @param {string} id - Element id to select (null to deselect)
+   * @param {boolean} multiSelect - Whether to add to selection (for ctrl+click)
    */
-  const selectElement = useCallback((id) => {
-    // Deselect previous
-    if (selectedElementId && selectedElementId !== id) {
+  const selectElement = useCallback((id, multiSelect = false) => {
+    if (multiSelect && id) {
+      // Multi-select: add/remove from selection
+      setSelectedElementIds(prev => {
+        if (prev.includes(id)) {
+          // Deselect if already selected
+          const element = elementsMapRef.current.get(id);
+          if (element) {
+            element.deselect();
+          }
+          const newIds = prev.filter(selectedId => selectedId !== id);
+          if (newIds.length === 1) {
+            setSelectedElementId(newIds[0]);
+          } else {
+            setSelectedElementId(null);
+          }
+          return newIds;
+        } else {
+          // Add to selection
+          const element = elementsMapRef.current.get(id);
+          if (element) {
+            element.select();
+          }
+          const newIds = [...prev, id];
+          if (newIds.length === 1) {
+            setSelectedElementId(id);
+          } else {
+            setSelectedElementId(null);
+          }
+          return newIds;
+        }
+      });
+    } else {
+      // Single select: deselect all previous
+      selectedElementIds.forEach(prevId => {
+        const prevElement = elementsMapRef.current.get(prevId);
+        if (prevElement) {
+          prevElement.deselect();
+          if (prevElement.isEditMode) {
+            prevElement.setEditMode(false);
+          }
+        }
+      });
+
+      if (selectedElementId && selectedElementId !== id) {
+        const prevElement = elementsMapRef.current.get(selectedElementId);
+        if (prevElement) {
+          prevElement.deselect();
+          if (prevElement.isEditMode) {
+            prevElement.setEditMode(false);
+          }
+        }
+      }
+
+      setSelectedElementId(id);
+      setSelectedElementIds(id ? [id] : []);
+
+      // Select new
+      if (id) {
+        const element = elementsMapRef.current.get(id);
+        if (element) {
+          element.select();
+        }
+      }
+    }
+  }, [selectedElementId, selectedElementIds]);
+
+  /**
+   * Set multiple selected elements
+   * @param {Array<string>} ids - Array of element ids
+   */
+  const setSelectedElements = useCallback((ids) => {
+    // Deselect all previous
+    selectedElementIds.forEach(prevId => {
+      const prevElement = elementsMapRef.current.get(prevId);
+      if (prevElement) {
+        prevElement.deselect();
+        if (prevElement.isEditMode) {
+          prevElement.setEditMode(false);
+        }
+      }
+    });
+
+    if (selectedElementId) {
       const prevElement = elementsMapRef.current.get(selectedElementId);
       if (prevElement) {
         prevElement.deselect();
@@ -315,16 +408,17 @@ export function useCanvasEditor() {
       }
     }
 
-    setSelectedElementId(id);
-
     // Select new
-    if (id) {
+    ids.forEach(id => {
       const element = elementsMapRef.current.get(id);
       if (element) {
         element.select();
       }
-    }
-  }, [selectedElementId]);
+    });
+
+    setSelectedElementIds(ids);
+    setSelectedElementId(ids.length === 1 ? ids[0] : null);
+  }, [selectedElementId, selectedElementIds]);
 
   /**
    * Update element properties
@@ -371,6 +465,102 @@ export function useCanvasEditor() {
     elementsMapRef.current.clear();
     setElements([]);
     setSelectedElementId(null);
+    setSelectedElementIds([]);
+  }, []);
+
+  /**
+   * Group selected elements
+   */
+  const groupSelectedElements = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const activeObjects = canvas.getActiveObjects();
+    if (activeObjects.length < 2) {
+      console.log('Need at least 2 objects to group');
+      return;
+    }
+
+    // Discard current selection
+    canvas.discardActiveObject();
+
+    // Create group from selected objects
+    const group = new Group(activeObjects, {
+      canvas: canvas,
+    });
+
+    // Remove individual objects from canvas
+    activeObjects.forEach(obj => {
+      canvas.remove(obj);
+    });
+
+    // Add group to canvas
+    canvas.add(group);
+    canvas.setActiveObject(group);
+    canvas.requestRenderAll();
+
+    // Clear selection state
+    setSelectedElementIds([]);
+    setSelectedElementId(null);
+  }, []);
+
+  /**
+   * Ungroup selected group
+   */
+  const ungroupSelectedElement = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const activeObject = canvas.getActiveObject();
+    if (!activeObject) {
+      console.log('No active object for ungroup');
+      return;
+    }
+    
+    if (activeObject.type !== 'group') {
+      console.log('Active object is not a group, type is:', activeObject.type);
+      return;
+    }
+
+    // Get items from group
+    const items = activeObject.getObjects();
+    
+    // Get group's transform matrix
+    const groupMatrix = activeObject.calcTransformMatrix();
+    
+    // Remove group from canvas
+    canvas.remove(activeObject);
+
+    // Add items back with correct transforms
+    items.forEach(item => {
+      // Get the item's transform relative to group
+      const itemMatrix = item.calcTransformMatrix();
+      
+      // Multiply to get absolute transform
+      const fullMatrix = util.multiplyTransformMatrices(groupMatrix, itemMatrix);
+      
+      // Decompose matrix to get position, scale, rotation
+      const options = util.qrDecompose(fullMatrix);
+      
+      item.set({
+        left: options.translateX,
+        top: options.translateY,
+        scaleX: options.scaleX,
+        scaleY: options.scaleY,
+        angle: options.angle,
+        flipX: false,
+        flipY: false,
+      });
+      
+      item.setCoords();
+      canvas.add(item);
+    });
+
+    canvas.discardActiveObject();
+    canvas.requestRenderAll();
+
+    setSelectedElementIds([]);
+    setSelectedElementId(null);
   }, []);
 
   /**
@@ -400,6 +590,7 @@ export function useCanvasEditor() {
     // State
     elements,
     selectedElementId,
+    selectedElementIds,
     
     // Canvas
     setCanvas,
@@ -412,10 +603,15 @@ export function useCanvasEditor() {
     getElementById,
     getSelectedElement,
     selectElement,
+    setSelectedElements,
     updateElement,
     updateSelectedElement,
     setSelectedElementEditMode,
     clearAllElements,
+    
+    // Group operations
+    groupSelectedElements,
+    ungroupSelectedElement,
     
     // Serialization
     toJSON,

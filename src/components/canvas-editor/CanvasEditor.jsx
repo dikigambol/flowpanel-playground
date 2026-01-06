@@ -23,13 +23,18 @@ function CanvasEditor() {
   const {
     elements,
     selectedElementId,
+    selectedElementIds,
     setCanvas,
     getCanvas,
     addElement,
+    deleteElement,
     deleteSelectedElement,
     getSelectedElement,
     selectElement,
+    setSelectedElements,
     updateSelectedElement,
+    groupSelectedElements,
+    ungroupSelectedElement,
   } = useCanvasEditor();
 
   // UI State
@@ -52,6 +57,15 @@ function CanvasEditor() {
 
   // Get selected element
   const selectedElement = getSelectedElement();
+
+  // Helper function to get element ID from fabric object
+  const getElementIdFromObject = (obj) => {
+    if (obj._polygonElement) return obj._polygonElement.id;
+    if (obj._textElement) return obj._textElement.id;
+    if (obj._imageElement) return obj._imageElement.id;
+    if (obj._bezierLineElement) return obj._bezierLineElement.id;
+    return null;
+  };
 
   // Draw grid
   const drawGrid = useCallback(() => {
@@ -163,10 +177,48 @@ function CanvasEditor() {
         return;
       }
 
-      // Delete element
+      // Delete element(s)
       if (e.key === 'Delete' || e.key === 'Backspace') {
+        const canvas = getCanvas();
+        if (!canvas) return;
+        
+        const activeObjects = canvas.getActiveObjects();
         const element = getSelectedElement();
-        if (element && !element.isEditMode) {
+        
+        // Check if we're in text edit mode (IText editing)
+        const activeObj = canvas.getActiveObject();
+        if (activeObj && activeObj.isEditing) {
+          // Let text editing handle delete
+          return;
+        }
+        
+        // If multiple selected (via Fabric's active selection), delete all
+        if (activeObjects.length > 1) {
+          e.preventDefault();
+          // Get element IDs from active objects
+          const ids = activeObjects
+            .map(obj => {
+              if (obj._polygonElement) return obj._polygonElement.id;
+              if (obj._textElement) return obj._textElement.id;
+              if (obj._imageElement) return obj._imageElement.id;
+              if (obj._bezierLineElement) return obj._bezierLineElement.id;
+              return null;
+            })
+            .filter(Boolean);
+          
+          // Delete each element
+          ids.forEach(id => {
+            deleteElement(id);
+          });
+          
+          canvas.discardActiveObject();
+          canvas.requestRenderAll();
+          selectElement(null);
+        } else if (selectedElementIds.length > 1) {
+          e.preventDefault();
+          // Delete all selected elements using the hook
+          deleteSelectedElement();
+        } else if (element && !element.isEditMode) {
           e.preventDefault();
           deleteSelectedElement();
         } else if (element?.isEditMode && element.deleteSelectedNode) {
@@ -195,7 +247,7 @@ function CanvasEditor() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [getSelectedElement, deleteSelectedElement, selectElement]);
+  }, [getSelectedElement, deleteSelectedElement, deleteElement, selectElement, selectedElementIds, getCanvas]);
 
   // Update cursor based on active tool
   useEffect(() => {
@@ -217,7 +269,8 @@ function CanvasEditor() {
 
     const canvas = new Canvas(canvasRef.current, {
       backgroundColor: 'transparent',
-      selection: false,
+      selection: true, // Enable selection for multiple selection support (Shift+click)
+      preserveObjectStacking: true, // Preserve object stacking order
     });
 
     setCanvas(canvas);
@@ -247,31 +300,45 @@ function CanvasEditor() {
 
     // Selection events - detect clicks on elements
     canvas.on('selection:created', (e) => {
-      if (e.selected && e.selected.length > 0) {
-        const obj = e.selected[0];
-        if (obj._polygonElement) {
-          selectElement(obj._polygonElement.id);
-        } else if (obj._textElement) {
-          selectElement(obj._textElement.id);
-        } else if (obj._imageElement) {
-          selectElement(obj._imageElement.id);
-        } else if (obj._bezierLineElement) {
-          selectElement(obj._bezierLineElement.id);
+      const activeObjects = canvas.getActiveObjects();
+      const isMultiSelect = e.e?.ctrlKey || e.e?.metaKey;
+      
+      if (activeObjects.length === 1) {
+        // Single selection
+        const obj = activeObjects[0];
+        const elementId = getElementIdFromObject(obj);
+        if (elementId) {
+          selectElement(elementId, isMultiSelect);
+        }
+      } else if (activeObjects.length > 1) {
+        // Multiple selection - don't show properties panel
+        const ids = activeObjects
+          .map(obj => getElementIdFromObject(obj))
+          .filter(Boolean);
+        if (ids.length > 0) {
+          setSelectedElements(ids);
         }
       }
     });
 
     canvas.on('selection:updated', (e) => {
-      if (e.selected && e.selected.length > 0) {
-        const obj = e.selected[0];
-        if (obj._polygonElement) {
-          selectElement(obj._polygonElement.id);
-        } else if (obj._textElement) {
-          selectElement(obj._textElement.id);
-        } else if (obj._imageElement) {
-          selectElement(obj._imageElement.id);
-        } else if (obj._bezierLineElement) {
-          selectElement(obj._bezierLineElement.id);
+      const activeObjects = canvas.getActiveObjects();
+      const isMultiSelect = e.e?.ctrlKey || e.e?.metaKey;
+      
+      if (activeObjects.length === 1) {
+        // Single selection
+        const obj = activeObjects[0];
+        const elementId = getElementIdFromObject(obj);
+        if (elementId) {
+          selectElement(elementId, isMultiSelect);
+        }
+      } else if (activeObjects.length > 1) {
+        // Multiple selection - don't show properties panel
+        const ids = activeObjects
+          .map(obj => getElementIdFromObject(obj))
+          .filter(Boolean);
+        if (ids.length > 0) {
+          setSelectedElements(ids);
         }
       }
     });
@@ -454,6 +521,10 @@ function CanvasEditor() {
           onGridToggle={setGridOn}
           zoomLevel={zoomLevel}
           onFitView={fitView}
+          selectedElementIds={selectedElementIds}
+          onGroup={groupSelectedElements}
+          onUngroup={ungroupSelectedElement}
+          getCanvas={getCanvas}
         />
 
         {/* Sidebar */}
@@ -463,8 +534,8 @@ function CanvasEditor() {
           onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
         />
 
-        {/* Properties Panel - muncul otomatis saat element dipilih */}
-        {selectedElement && (
+        {/* Properties Panel - muncul otomatis saat element dipilih (hanya untuk single selection) */}
+        {selectedElement && selectedElementIds.length <= 1 && (
           <PropertiesPanel
             element={selectedElement}
             onUpdate={handleUpdateProperties}
