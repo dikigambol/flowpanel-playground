@@ -2,6 +2,8 @@
 
 ![Canvas Editor Screenshot](docs/canvas-editor-screenshot.png)
 
+🔗 **Demo Online:** [flowpanel-playground.vercel.app](https://flowpanel-playground.vercel.app)
+
 Canvas Editor yang fleksibel untuk membuat dan mengedit desain visual dengan komponen modular. Aplikasi ini memungkinkan pengguna menambahkan berbagai elemen visual ke dalam satu canvas utama dengan kemampuan editing properti individual.
 
 ## 🛠️ Tech Stack
