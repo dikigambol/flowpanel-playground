@@ -525,20 +525,29 @@ export function useCanvasEditor() {
     // Get items from group - make a copy of the array
     const items = [...group.getObjects()];
     
-    // Store each item's absolute position BEFORE removing from group
+    // Get group's transformation matrix
+    const groupMatrix = group.calcTransformMatrix();
+    
+    // Store each item's absolute transform BEFORE removing from group
     const itemsData = items.map(item => {
-      // Get the absolute center point of the item
-      const center = item.getCenterPoint();
-      // Transform this point from group coordinates to canvas coordinates
-      const absoluteCenter = util.transformPoint(center, group.calcTransformMatrix());
+      // Get item's own transformation matrix (relative to group)
+      const itemMatrix = item.calcOwnMatrix();
+      
+      // Combine group and item matrices to get absolute matrix
+      const absoluteMatrix = util.multiplyTransformMatrices(groupMatrix, itemMatrix);
+      
+      // Decompose the matrix to get individual transform properties
+      const decomposed = util.qrDecompose(absoluteMatrix);
       
       return {
         item,
-        left: absoluteCenter.x,
-        top: absoluteCenter.y,
-        scaleX: (item.scaleX || 1) * (group.scaleX || 1),
-        scaleY: (item.scaleY || 1) * (group.scaleY || 1),
-        angle: (item.angle || 0) + (group.angle || 0),
+        left: decomposed.translateX,
+        top: decomposed.translateY,
+        scaleX: decomposed.scaleX,
+        scaleY: decomposed.scaleY,
+        angle: decomposed.angle,
+        skewX: decomposed.skewX,
+        skewY: decomposed.skewY,
       };
     });
     
@@ -546,22 +555,22 @@ export function useCanvasEditor() {
     canvas.remove(group);
 
     // Add items back with correct absolute positions
-    itemsData.forEach(({ item, left, top, scaleX, scaleY, angle }) => {
+    itemsData.forEach(({ item, left, top, scaleX, scaleY, angle, skewX, skewY }) => {
       // Remove item from the group's internal collection
       group.remove(item);
       
       // Reset any group reference
       item.group = undefined;
       
-      // Set absolute position using center point
+      // Set absolute transform
       item.set({
         left: left,
         top: top,
         scaleX: scaleX,
         scaleY: scaleY,
         angle: angle,
-        originX: 'center',
-        originY: 'center',
+        skewX: skewX || 0,
+        skewY: skewY || 0,
       });
       
       // Update coordinates
