@@ -511,48 +511,63 @@ export function useCanvasEditor() {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const activeObject = canvas.getActiveObject();
-    if (!activeObject) {
+    const group = canvas.getActiveObject();
+    if (!group) {
       console.log('No active object for ungroup');
       return;
     }
     
-    if (activeObject.type !== 'group') {
-      console.log('Active object is not a group, type is:', activeObject.type);
+    if (group.type !== 'group') {
+      console.log('Active object is not a group, type is:', group.type);
       return;
     }
 
-    // Get items from group
-    const items = activeObject.getObjects();
+    // Get items from group - make a copy of the array
+    const items = [...group.getObjects()];
     
-    // Get group's transform matrix
-    const groupMatrix = activeObject.calcTransformMatrix();
+    // Store each item's absolute position BEFORE removing from group
+    const itemsData = items.map(item => {
+      // Get the absolute center point of the item
+      const center = item.getCenterPoint();
+      // Transform this point from group coordinates to canvas coordinates
+      const absoluteCenter = util.transformPoint(center, group.calcTransformMatrix());
+      
+      return {
+        item,
+        left: absoluteCenter.x,
+        top: absoluteCenter.y,
+        scaleX: (item.scaleX || 1) * (group.scaleX || 1),
+        scaleY: (item.scaleY || 1) * (group.scaleY || 1),
+        angle: (item.angle || 0) + (group.angle || 0),
+      };
+    });
     
     // Remove group from canvas
-    canvas.remove(activeObject);
+    canvas.remove(group);
 
-    // Add items back with correct transforms
-    items.forEach(item => {
-      // Get the item's transform relative to group
-      const itemMatrix = item.calcTransformMatrix();
+    // Add items back with correct absolute positions
+    itemsData.forEach(({ item, left, top, scaleX, scaleY, angle }) => {
+      // Remove item from the group's internal collection
+      group.remove(item);
       
-      // Multiply to get absolute transform
-      const fullMatrix = util.multiplyTransformMatrices(groupMatrix, itemMatrix);
+      // Reset any group reference
+      item.group = undefined;
       
-      // Decompose matrix to get position, scale, rotation
-      const options = util.qrDecompose(fullMatrix);
-      
+      // Set absolute position using center point
       item.set({
-        left: options.translateX,
-        top: options.translateY,
-        scaleX: options.scaleX,
-        scaleY: options.scaleY,
-        angle: options.angle,
-        flipX: false,
-        flipY: false,
+        left: left,
+        top: top,
+        scaleX: scaleX,
+        scaleY: scaleY,
+        angle: angle,
+        originX: 'center',
+        originY: 'center',
       });
       
+      // Update coordinates
       item.setCoords();
+      
+      // Add to canvas
       canvas.add(item);
     });
 
