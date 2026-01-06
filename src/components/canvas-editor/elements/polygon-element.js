@@ -24,6 +24,7 @@ export class PolygonElement extends BaseElement {
       strokeWidth: options.strokeWidth || 3,
       shapeType: options.shapeType || 'freeform',
       transparentFill: options.transparentFill || false,
+      status: options.status || '',
       points: options.points || [
         { x: 200, y: 150 },
         { x: 400, y: 150 },
@@ -303,14 +304,36 @@ export class PolygonElement extends BaseElement {
   }
 
   /**
+   * Get colors based on status
+   * @returns {Object} {fill, stroke} colors or null if no status match
+   */
+  _getStatusColors() {
+    const statusColors = {
+      'running': { fill: '#22c55e', stroke: '#16a34a' }, // hijau
+      'idle': { fill: '#eab308', stroke: '#ca8a04' }, // kuning
+      'off': { fill: '#eab308', stroke: '#ca8a04' }, // kuning (idle/off)
+      'alarm': { fill: '#ef4444', stroke: '#dc2626' }, // merah
+      'maintenance': { fill: '#3b82f6', stroke: '#2563eb' }, // biru
+      'breakdown': { fill: '#000000', stroke: '#374151' }, // hitam
+      'disconnected': { fill: '#6b7280', stroke: '#4b5563' }, // abu-abu
+    };
+    
+    return statusColors[this.properties.status] || null;
+  }
+
+  /**
    * Update polygon style without rebuilding
    */
   _updatePolygonStyle() {
     if (!this.polygon) return;
 
+    const statusColors = this._getStatusColors();
+    const fillColor = statusColors ? statusColors.fill : this.properties.fillColor;
+    const strokeColor = statusColors ? statusColors.stroke : this.properties.strokeColor;
+
     this.polygon.set({
-      fill: this.properties.transparentFill ? null : this.properties.fillColor,
-      stroke: this.properties.hasBorder ? this.properties.strokeColor : null,
+      fill: this.properties.transparentFill ? null : fillColor,
+      stroke: this.properties.hasBorder ? strokeColor : null,
       strokeWidth: this.properties.hasBorder ? this.properties.strokeWidth : 0,
     });
     this.canvas.requestRenderAll();

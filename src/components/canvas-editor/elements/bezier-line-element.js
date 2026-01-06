@@ -20,6 +20,7 @@ export class BezierLineElement extends BaseElement {
     this.properties = {
       strokeColor: options.strokeColor || '#22c55e',
       strokeWidth: options.strokeWidth || 3,
+      status: options.status || '',
       // Array of points: [{ x, y }, { x, y }, ...]
       points: options.points || [],
     };
@@ -127,13 +128,34 @@ export class BezierLineElement extends BaseElement {
   }
 
   /**
+   * Get colors based on status
+   * @returns {Object} {stroke} color or null if no status match
+   */
+  _getStatusColors() {
+    const statusColors = {
+      'running': { stroke: '#16a34a' }, // hijau
+      'idle': { stroke: '#ca8a04' }, // kuning
+      'off': { stroke: '#ca8a04' }, // kuning (idle/off)
+      'alarm': { stroke: '#dc2626' }, // merah
+      'maintenance': { stroke: '#2563eb' }, // biru
+      'breakdown': { stroke: '#374151' }, // hitam
+      'disconnected': { stroke: '#4b5563' }, // abu-abu
+    };
+    
+    return statusColors[this.properties.status] || null;
+  }
+
+  /**
    * Update path style without rebuilding
    */
   _updatePathStyle() {
     if (!this.path) return;
 
+    const statusColors = this._getStatusColors();
+    const strokeColor = statusColors ? statusColors.stroke : this.properties.strokeColor;
+
     this.path.set({
-      stroke: this.properties.strokeColor,
+      stroke: strokeColor,
       strokeWidth: this.properties.strokeWidth,
     });
     this.canvas.requestRenderAll();

@@ -59,6 +59,36 @@ function BezierLineProperties({ properties, onPropertyChange, editMode, segmentC
         </div>
       </div>
 
+      {/* Status */}
+      <div style={controlGroupStyle}>
+        <span style={labelStyle}>Status</span>
+        <div style={inputRowStyle}>
+          <select
+            value={properties.status || ''}
+            onChange={(e) => handlePropertyChange('status', e.target.value)}
+            style={{
+              flex: 1,
+              padding: '6px 8px',
+              border: '1px solid #2a2a4a',
+              borderRadius: '6px',
+              backgroundColor: '#1e1e3f',
+              color: '#cbd5e1',
+              fontSize: '12px',
+              fontFamily: "'Segoe UI', system-ui, sans-serif",
+            }}
+          >
+            <option value="">Default</option>
+            <option value="running">Running (Hijau)</option>
+            <option value="idle">Idle (Kuning)</option>
+            <option value="off">Off (Kuning)</option>
+            <option value="alarm">Alarm (Merah)</option>
+            <option value="maintenance">Maintenance (Biru)</option>
+            <option value="breakdown">Breakdown (Hitam)</option>
+            <option value="disconnected">Disconnected (Abu-abu)</option>
+          </select>
+        </div>
+      </div>
+
       {/* Stroke Width */}
       <div style={controlGroupStyle}>
         <span style={labelStyle}>Stroke Width: {properties.strokeWidth || 3}px</span>
