@@ -25,16 +25,16 @@ export const drawerStyle = {
   position: 'absolute',
   top: '20px',
   right: '20px',
-  width: '250px',
+  width: '220px',
   maxHeight: 'calc(100vh - 80px)',
   backgroundColor: '#15152a',
   border: '1px solid #2a2a4a',
-  borderRadius: '12px',
-  padding: '15px',
+  borderRadius: '10px',
+  padding: '10px',
   overflowY: 'auto',
   display: 'flex',
   flexDirection: 'column',
-  gap: '15px',
+  gap: '10px',
   zIndex: 10,
   boxShadow: '0 4px 20px rgba(0, 0, 0, 0.5)',
   fontFamily: "'Segoe UI', system-ui, sans-serif",
@@ -42,16 +42,16 @@ export const drawerStyle = {
 
 export const sidebarStyle = {
   position: 'absolute',
-  top: '12px',
+  top: '10px',
   left: '20px',
-  width: '33px',
+  width: '30px',
   backgroundColor: '#ffffffff',
   border: '1px solid #3a3a3aff',
-  borderRadius: '12px',
-  padding: '8px',
+  borderRadius: '10px',
+  padding: '6px',
   display: 'flex',
   flexDirection: 'column',
-  gap: '4px',
+  gap: '3px',
   zIndex: 10,
   boxShadow: '0 4px 20px rgba(0, 0, 0, 0.5)',
   fontFamily: "'Segoe UI', system-ui, sans-serif",
@@ -63,12 +63,12 @@ export const floatingToolbarStyle = {
   left: '50%',
   transform: 'translateX(-50%)',
   backgroundColor: 'rgba(15, 23, 42, 0.9)',
-  borderRadius: '8px',
-  padding: '6px 12px',
+  borderRadius: '6px',
+  padding: '4px 8px',
   display: 'flex',
   flexDirection: 'row',
   alignItems: 'center',
-  gap: '12px',
+  gap: '8px',
   zIndex: 1000,
   backdropFilter: 'blur(8px)',
   border: '1px solid rgba(71, 85, 105, 0.3)',
@@ -79,15 +79,15 @@ export const floatingToolbarStyle = {
 
 export const headerStyle = {
   color: '#60a5fa',
-  fontSize: '18px',
+  fontSize: '16px',
   fontWeight: '600',
   borderBottom: '1px solid #2a2a4a',
-  paddingBottom: '10px',
-  marginBottom: '8px',
+  paddingBottom: '8px',
+  marginBottom: '6px',
 };
 
 export const labelStyle = {
-  fontSize: '10px',
+  fontSize: '9px',
   fontWeight: '600',
   color: '#94a3b8',
   textTransform: 'uppercase',
@@ -95,7 +95,7 @@ export const labelStyle = {
 };
 
 export const smallTextStyle = {
-  fontSize: '11px',
+  fontSize: '10px',
   color: '#cbd5e1',
 };
 
@@ -109,10 +109,10 @@ export const mutedTextStyle = {
 export const controlGroupStyle = {
   display: 'flex',
   flexDirection: 'column',
-  gap: '8px',
-  padding: '10px',
+  gap: '6px',
+  padding: '8px',
   backgroundColor: '#1e1e3f',
-  borderRadius: '8px',
+  borderRadius: '6px',
 };
 
 export const inputRowStyle = {
@@ -146,22 +146,22 @@ export const checkboxStyle = {
 // ==================== Button Styles ====================
 
 export const buttonStyle = (active = false, color = '#3b82f6') => ({
-  padding: '8px 12px',
+  padding: '6px 10px',
   border: 'none',
-  borderRadius: '6px',
+  borderRadius: '5px',
   cursor: 'pointer',
   fontWeight: '600',
-  fontSize: '12px',
+  fontSize: '11px',
   backgroundColor: active ? '#22c55e' : color,
   color: '#ffffff',
   transition: 'all 0.2s',
 });
 
 export const iconButtonStyle = (active = false) => ({
-  padding: '8px 12px',
-  fontSize: '16px',
+  padding: '6px 10px',
+  fontSize: '14px',
   border: 'none',
-  borderRadius: '6px',
+  borderRadius: '5px',
   cursor: 'pointer',
   backgroundColor: active ? '#3b82f6' : 'transparent',
   color: active ? '#ffffff' : '#94a3b8',
@@ -172,14 +172,14 @@ export const iconButtonStyle = (active = false) => ({
 });
 
 export const sidebarButtonStyle = (active = false) => ({
-  width: '32px',
-  height: '32px',
+  width: '28px',
+  height: '28px',
   border: 'none',
-  borderRadius: '6px',
+  borderRadius: '5px',
   cursor: 'pointer',
   backgroundColor: active ? '#3b82f6' : 'transparent',
   color: active ? '#393939ff' : '#000000ff',
-  fontSize: '14px',
+  fontSize: '12px',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
@@ -190,7 +190,7 @@ export const sidebarButtonStyle = (active = false) => ({
 
 export const verticalDividerStyle = {
   borderRight: '1px solid rgba(71, 85, 105, 0.5)',
-  paddingRight: '12px',
+  paddingRight: '8px',
 };
 
 export const horizontalDividerStyle = {

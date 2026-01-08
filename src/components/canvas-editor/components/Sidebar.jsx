@@ -34,7 +34,7 @@ function Sidebar({ onAddElement, collapsed = true, onToggleCollapse }) {
   return (
     <div style={{
       ...sidebarStyle,
-      width: '33px',
+      width: '28px',
       padding: '4px',
     }}>
       <button
@@ -42,7 +42,7 @@ function Sidebar({ onAddElement, collapsed = true, onToggleCollapse }) {
         style={sidebarButtonStyle(false)}
         title={collapsed ? "Expand Sidebar" : "Collapse Sidebar"}
       >
-        {collapsed ? <Menu size={20} /> : <X size={20} />}
+        {collapsed ? <Menu size={16} /> : <X size={16} />}
       </button>
 
       {!collapsed && (
@@ -59,7 +59,7 @@ function Sidebar({ onAddElement, collapsed = true, onToggleCollapse }) {
             style={sidebarButtonStyle(false)}
             title="Add Shape"
           >
-            <Square size={20} />
+            <Square size={16} />
           </button>
 
           {/* Add Line */}
@@ -68,7 +68,7 @@ function Sidebar({ onAddElement, collapsed = true, onToggleCollapse }) {
             style={sidebarButtonStyle(false)}
             title="Add Line"
           >
-            <Minus size={20} />
+            <Minus size={16} />
           </button>
 
           {/* Add Text */}
@@ -77,7 +77,7 @@ function Sidebar({ onAddElement, collapsed = true, onToggleCollapse }) {
             style={sidebarButtonStyle(false)}
             title="Add Text"
           >
-            <Type size={20} />
+            <Type size={16} />
           </button>
 
           {/* Add Image */}
@@ -95,7 +95,7 @@ function Sidebar({ onAddElement, collapsed = true, onToggleCollapse }) {
             style={sidebarButtonStyle(false)}
             title="Add Machine Symbol (Ongoing)"
           >
-            <Zap size={20} />
+            <Zap size={16} />
           </button>
 
           {/* Hidden file input for image selection */}

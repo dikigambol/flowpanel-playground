@@ -32,7 +32,7 @@ function PropertiesPanel({ element, onUpdate, onDelete }) {
   const [selectedControlPointIndex, setSelectedControlPointIndex] = useState(null);
 
   // Panel state for resizable and draggable
-  const [panelSize, setPanelSize] = useState({ width: 250, height: 450 });
+  const [panelSize, setPanelSize] = useState({ width: 220, height: 380 });
   const [panelPosition, setPanelPosition] = useState({ x: 20, y: 20 });
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
@@ -46,7 +46,7 @@ function PropertiesPanel({ element, onUpdate, onDelete }) {
     if (typeof window !== 'undefined') {
       setPanelPosition({
         x: window.innerWidth - panelSize.width - 40,  // More margin from right edge
-        y: 10,
+        y: 70,
       });
     }
   }, []);
@@ -70,8 +70,8 @@ function PropertiesPanel({ element, onUpdate, onDelete }) {
         y: e.clientY - dragStart.y,
       });
     } else if (isResizing) {
-      const newWidth = Math.max(200, Math.min(400, resizeStart.width + (e.clientX - resizeStart.x)));
-      const newHeight = Math.max(300, Math.min(600, resizeStart.height + (e.clientY - resizeStart.y)));
+      const newWidth = Math.max(180, Math.min(350, resizeStart.width + (e.clientX - resizeStart.x)));
+      const newHeight = Math.max(250, Math.min(500, resizeStart.height + (e.clientY - resizeStart.y)));
       setPanelSize({ width: newWidth, height: newHeight });
     }
   };
@@ -182,11 +182,11 @@ function PropertiesPanel({ element, onUpdate, onDelete }) {
   // Get icon based on element type
   const getElementIcon = () => {
     switch (element.type) {
-      case 'polygon': return <Square size={16} />;
-      case 'text': return <Type size={16} />;
-      case 'symbol': return <Zap size={16} />;
-      case 'image': return <Image size={16} />;
-      case 'line': return <Minus size={16} />;
+      case 'polygon': return <Square size={14} />;
+      case 'text': return <Type size={14} />;
+      case 'symbol': return <Zap size={14} />;
+      case 'image': return <Image size={14} />;
+      case 'line': return <Minus size={14} />;
       default: return '□';
     }
   };
@@ -226,7 +226,7 @@ function PropertiesPanel({ element, onUpdate, onDelete }) {
           {getElementIcon()} 
           <span>{getElementDisplayName()}</span>
         </div>
-        <Grip size={16} style={{ color: '#94a3b8', opacity: 0.6 }} />
+        <Grip size={14} style={{ color: '#94a3b8', opacity: 0.6 }} />
       </div>
 
       {/* Properties based on type */}
@@ -251,7 +251,7 @@ function PropertiesPanel({ element, onUpdate, onDelete }) {
       {element.type === 'symbol' && (
         <div style={controlGroupStyle}>
           <span style={smallTextStyle}>
-            <Zap size={14} /> Machine Symbol properties (Coming Soon)
+            <Zap size={12} /> Machine Symbol properties (Coming Soon)
           </span>
         </div>
       )}
@@ -299,23 +299,23 @@ function PropertiesPanel({ element, onUpdate, onDelete }) {
             }}
             title="Bring to Front"
           >
-            <ChevronUp size={14} /> Front
+            <ChevronUp size={12} /> Front
           </button>
           <button
             onClick={() => element.sendToBack?.()}
             style={{
               ...buttonStyle(false),
-              padding: '6px 8px',
-              fontSize: '11px',
+              padding: '5px 6px',
+              fontSize: '10px',
               flex: 1,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: '4px',
+              gap: '3px',
             }}
             title="Send to Back"
           >
-            <ChevronDown size={14} /> Back
+            <ChevronDown size={12} /> Back
           </button>
         </div>
         
@@ -329,7 +329,7 @@ function PropertiesPanel({ element, onUpdate, onDelete }) {
             gap: '6px',
           }}
         >
-          <Trash2 size={16} /> Delete Element
+          <Trash2 size={14} /> Delete Element
         </button>
       </div>
 
