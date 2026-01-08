@@ -7,7 +7,7 @@ import {
   mutedTextStyle,
   verticalDividerStyle,
 } from '../styles';
-import { MousePointer2, Hand, Maximize2, Group, Ungroup, FileText, Image, ChevronLeft, ChevronRight } from 'lucide-react';
+import { MousePointer2, Hand, Maximize2, Group, Ungroup, FileText, Image, ChevronLeft, ChevronRight, Eye, EyeOff } from 'lucide-react';
 
 /**
  * FloatingToolbar - Toolbar floating untuk canvas controls
@@ -25,6 +25,8 @@ import { MousePointer2, Hand, Maximize2, Group, Ungroup, FileText, Image, Chevro
  * @param {Function} props.onExportJSON - Callback saat export JSON clicked
  * @param {Function} props.onExportPNG - Callback saat export PNG clicked
  * @param {Function} props.getCanvas - Function to get canvas instance
+ * @param {boolean} props.viewMode - Whether view mode is active
+ * @param {Function} props.onViewModeToggle - Callback saat view mode toggle
  */
 function FloatingToolbar({ 
   activeTool, 
@@ -39,11 +41,20 @@ function FloatingToolbar({
   onExportJSON,
   onExportPNG,
   getCanvas,
+  viewMode,
+  onViewModeToggle,
 }) {
   // Check if active object is a group or active selection
   const [isGroupSelected, setIsGroupSelected] = useState(false);
   const [canGroup, setCanGroup] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
+
+  // Force expand toolbar when view mode is active
+  useEffect(() => {
+    if (viewMode && isCollapsed) {
+      setIsCollapsed(false);
+    }
+  }, [viewMode, isCollapsed]);
   const [windowWidth, setWindowWidth] = useState(0);
   
   useEffect(() => {
@@ -111,9 +122,11 @@ function FloatingToolbar({
     };
   }, [windowWidth]);
 
-  // Toggle collapse (manual override)
+  // Toggle collapse (manual override) - disabled in view mode
   const toggleCollapse = () => {
-    setIsCollapsed(!isCollapsed);
+    if (!viewMode) {
+      setIsCollapsed(!isCollapsed);
+    }
   };
   return (
     <div style={{
@@ -122,162 +135,275 @@ function FloatingToolbar({
       minWidth: isCollapsed ? 'auto' : 'auto',
     }}>
       {isCollapsed ? (
-        // Collapsed view - only essential tools
+        // Collapsed view - tools based on view mode
         <>
-          <div style={{ display: 'flex', gap: '4px' }}>
-            <button
-              onClick={() => onToolChange('select')}
-              title="Select Tool (V)"
-              style={iconButtonStyle(activeTool === 'select')}
-            >
-              <MousePointer2 size={14} />
-            </button>
-            <button
-              onClick={() => onToolChange('pan')}
-              title="Pan Tool (H)"
-              style={iconButtonStyle(activeTool === 'pan')}
-            >
-              <Hand size={14} />
-            </button>
-          </div>
-          
-          {/* Expand button */}
-          <button
-            onClick={toggleCollapse}
-            title="Expand Toolbar"
-            style={{
-              ...iconButtonStyle(false),
-              padding: '4px',
-            }}
-          >
-            <ChevronRight size={12} />
-          </button>
+          {viewMode ? (
+            // View Mode: Pan tool, view toggle, zoom info, and fit view
+            <>
+              <div style={{ display: 'flex', gap: '4px' }}>
+                <button
+                  onClick={() => onToolChange('pan')}
+                  title="Pan Tool (H)"
+                  style={iconButtonStyle(activeTool === 'pan')}
+                >
+                  <Hand size={14} />
+                </button>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <input
+                  type="checkbox"
+                  checked={viewMode}
+                  onChange={(e) => onViewModeToggle(e.target.checked)}
+                  style={{ ...checkboxStyle, margin: 0 }}
+                />
+                <span style={{ ...mutedTextStyle, margin: 0, fontSize: '10px' }}>View</span>
+              </div>
+
+              {/* Zoom Level */}
+              <div style={{ ...mutedTextStyle, minWidth: '30px', textAlign: 'center', fontSize: '10px' }}>
+                {(zoomLevel * 100).toFixed(0)}%
+              </div>
+
+              {/* Fit View Button */}
+              <button
+                onClick={onFitView}
+                style={{
+                  ...buttonStyle(false),
+                  padding: '2px 6px',
+                  fontSize: '10px',
+                  minWidth: 'auto',
+                  margin: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '2px',
+                }}
+              >
+                <Maximize2 size={10} /> Fit
+              </button>
+            </>
+          ) : (
+            // Normal Mode: Select tool and view toggle
+            <>
+              <div style={{ display: 'flex', gap: '4px' }}>
+                <button
+                  onClick={() => onToolChange('select')}
+                  title="Select Tool (V)"
+                  style={iconButtonStyle(activeTool === 'select')}
+                >
+                  <MousePointer2 size={14} />
+                </button>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <input
+                  type="checkbox"
+                  checked={viewMode}
+                  onChange={(e) => onViewModeToggle(e.target.checked)}
+                  style={{ ...checkboxStyle, margin: 0 }}
+                />
+                <span style={{ ...mutedTextStyle, margin: 0, fontSize: '10px' }}>View</span>
+              </div>
+
+              {/* Expand button - only show in normal mode */}
+              <button
+                onClick={toggleCollapse}
+                title="Expand Toolbar"
+                style={{
+                  ...iconButtonStyle(false),
+                  padding: '4px',
+                }}
+              >
+                <ChevronRight size={12} />
+              </button>
+            </>
+          )}
         </>
       ) : (
-        // Expanded view - all tools
+        // Expanded view - tools based on view mode
         <>
-          {/* Tool Buttons */}
-          <div style={{ display: 'flex', gap: '4px', ...verticalDividerStyle }}>
-            <button
-              onClick={() => onToolChange('select')}
-              title="Select Tool (V)"
-              style={iconButtonStyle(activeTool === 'select')}
-            >
-              <MousePointer2 size={14} />
-            </button>
-            <button
-              onClick={() => onToolChange('pan')}
-              title="Pan Tool (H)"
-              style={iconButtonStyle(activeTool === 'pan')}
-            >
-              <Hand size={14} />
-            </button>
-            <button
-              onClick={onGroup}
-              title="Group (Ctrl+G)"
-              disabled={!canGroup}
-              style={{
-                ...iconButtonStyle(false),
-                opacity: !canGroup ? 0.5 : 1,
-                cursor: !canGroup ? 'not-allowed' : 'pointer',
-              }}
-            >
-              <Group size={14} />
-            </button>
-            <button
-              onClick={onUngroup}
-              title="Ungroup"
-              disabled={!isGroupSelected}
-              style={{
-                ...iconButtonStyle(false),
-                opacity: !isGroupSelected ? 0.5 : 1,
-                cursor: !isGroupSelected ? 'not-allowed' : 'pointer',
-              }}
-            >
-              <Ungroup size={14} />
-            </button>
-          </div>
+          {viewMode ? (
+            // View Mode: Pan tool, view toggle, zoom info, and fit view
+            <>
+              <button
+                onClick={() => onToolChange('pan')}
+                title="Pan Tool (H)"
+                style={iconButtonStyle(activeTool === 'pan')}
+              >
+                <Hand size={14} />
+              </button>
 
-          {/* Grid Toggle */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <input
-              type="checkbox"
-              checked={gridOn}
-              onChange={(e) => onGridToggle(e.target.checked)}
-              style={{ ...checkboxStyle, margin: 0 }}
-            />
-            <span style={{ ...mutedTextStyle, margin: 0 }}>Grid</span>
-          </div>
-          
-          {/* Zoom Level */}
-          <div style={{ ...mutedTextStyle, minWidth: '40px', textAlign: 'center' }}>
-            {(zoomLevel * 100).toFixed(0)}%
-          </div>
-          
-          {/* Export Buttons */}
-          <div style={{ display: 'flex', gap: '4px' }}>
-            <button
-              onClick={onExportJSON}
-              title="Export as JSON"
-              style={{ 
-                ...buttonStyle(false), 
-                padding: '4px 8px', 
-                fontSize: '11px',
-                minWidth: 'auto',
-                margin: 0,
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-              }}
-            >
-              <FileText size={12} /> JSON
-            </button>
-            <button
-              onClick={onExportPNG}
-              title="Export as PNG"
-              style={{ 
-                ...buttonStyle(false), 
-                padding: '4px 8px', 
-                fontSize: '11px',
-                minWidth: 'auto',
-                margin: 0,
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-              }}
-            >
-              <Image size={12} /> PNG
-            </button>
-          </div>
-          
-          {/* Fit View Button */}
-          <button
-            onClick={onFitView}
-            style={{ 
-              ...buttonStyle(false), 
-              padding: '4px 8px', 
-              fontSize: '11px',
-              minWidth: 'auto',
-              margin: 0,
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-            }}
-          >
-            <Maximize2 size={12} /> Fit
-          </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <input
+                  type="checkbox"
+                  checked={viewMode}
+                  onChange={(e) => onViewModeToggle(e.target.checked)}
+                  style={{ ...checkboxStyle, margin: 0 }}
+                />
+                <span style={{ ...mutedTextStyle, margin: 0 }}>View</span>
+              </div>
 
-          {/* Collapse button */}
-          <button
-            onClick={toggleCollapse}
-            title="Collapse Toolbar"
-            style={{
-              ...iconButtonStyle(false),
-              padding: '4px',
-            }}
-          >
-            <ChevronLeft size={12} />
-          </button>
+              {/* Zoom Level */}
+              <div style={{ ...mutedTextStyle, minWidth: '40px', textAlign: 'center' }}>
+                {(zoomLevel * 100).toFixed(0)}%
+              </div>
+
+              {/* Fit View Button */}
+              <button
+                onClick={onFitView}
+                style={{
+                  ...buttonStyle(false),
+                  padding: '4px 8px',
+                  fontSize: '11px',
+                  minWidth: 'auto',
+                  margin: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                }}
+              >
+                <Maximize2 size={12} /> Fit
+              </button>
+            </>
+          ) : (
+            // Normal Mode: All tools
+            <>
+              {/* Tool Buttons */}
+              <div style={{ display: 'flex', gap: '4px', ...verticalDividerStyle }}>
+                <button
+                  onClick={() => onToolChange('select')}
+                  title="Select Tool (V)"
+                  style={iconButtonStyle(activeTool === 'select')}
+                >
+                  <MousePointer2 size={14} />
+                </button>
+                <button
+                  onClick={() => onToolChange('pan')}
+                  title="Pan Tool (H)"
+                  style={iconButtonStyle(activeTool === 'pan')}
+                >
+                  <Hand size={14} />
+                </button>
+                <button
+                  onClick={onGroup}
+                  title="Group (Ctrl+G)"
+                  disabled={!canGroup}
+                  style={{
+                    ...iconButtonStyle(false),
+                    opacity: !canGroup ? 0.5 : 1,
+                    cursor: !canGroup ? 'not-allowed' : 'pointer',
+                  }}
+                >
+                  <Group size={14} />
+                </button>
+                <button
+                  onClick={onUngroup}
+                  title="Ungroup"
+                  disabled={!isGroupSelected}
+                  style={{
+                    ...iconButtonStyle(false),
+                    opacity: !isGroupSelected ? 0.5 : 1,
+                    cursor: !isGroupSelected ? 'not-allowed' : 'pointer',
+                  }}
+                >
+                  <Ungroup size={14} />
+                </button>
+              </div>
+
+              {/* Grid Toggle */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <input
+                  type="checkbox"
+                  checked={gridOn}
+                  onChange={(e) => onGridToggle(e.target.checked)}
+                  style={{ ...checkboxStyle, margin: 0 }}
+                />
+                <span style={{ ...mutedTextStyle, margin: 0 }}>Grid</span>
+              </div>
+
+              {/* View Mode Toggle */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <input
+                  type="checkbox"
+                  checked={viewMode}
+                  onChange={(e) => onViewModeToggle(e.target.checked)}
+                  style={{ ...checkboxStyle, margin: 0 }}
+                />
+                <span style={{ ...mutedTextStyle, margin: 0 }}>View</span>
+              </div>
+
+              {/* Zoom Level */}
+              <div style={{ ...mutedTextStyle, minWidth: '40px', textAlign: 'center' }}>
+                {(zoomLevel * 100).toFixed(0)}%
+              </div>
+
+              {/* Export Buttons */}
+              <div style={{ display: 'flex', gap: '4px' }}>
+                <button
+                  onClick={onExportJSON}
+                  title="Export as JSON"
+                  style={{
+                    ...buttonStyle(false),
+                    padding: '4px 8px',
+                    fontSize: '11px',
+                    minWidth: 'auto',
+                    margin: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                  }}
+                >
+                  <FileText size={12} /> JSON
+                </button>
+                <button
+                  onClick={onExportPNG}
+                  title="Export as PNG"
+                  style={{
+                    ...buttonStyle(false),
+                    padding: '4px 8px',
+                    fontSize: '11px',
+                    minWidth: 'auto',
+                    margin: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                  }}
+                >
+                  <Image size={12} /> PNG
+                </button>
+              </div>
+
+              {/* Fit View Button */}
+              <button
+                onClick={onFitView}
+                style={{
+                  ...buttonStyle(false),
+                  padding: '4px 8px',
+                  fontSize: '11px',
+                  minWidth: 'auto',
+                  margin: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                }}
+              >
+                <Maximize2 size={12} /> Fit
+              </button>
+
+              {/* Collapse button - only show in normal mode */}
+              <button
+                onClick={toggleCollapse}
+                title="Collapse Toolbar"
+                style={{
+                  ...iconButtonStyle(false),
+                  padding: '4px',
+                }}
+              >
+                <ChevronLeft size={12} />
+              </button>
+            </>
+          )}
+
         </>
       )}
     </div>

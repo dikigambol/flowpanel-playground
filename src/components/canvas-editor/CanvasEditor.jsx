@@ -44,6 +44,7 @@ function CanvasEditor() {
   const [gridOn, setGridOn] = useState(true);
   const [zoomLevel, setZoomLevel] = useState(1);
   const [activeTool, setActiveTool] = useState('select');
+  const [viewMode, setViewMode] = useState(false);
 
   const activeToolRef = useRef(activeTool);
   activeToolRef.current = activeTool;
@@ -313,6 +314,33 @@ function CanvasEditor() {
     }
   }, [activeTool, getCanvas]);
 
+  // Handle view mode changes
+  useEffect(() => {
+    const canvas = getCanvas();
+    if (!canvas) return;
+
+    if (viewMode) {
+      // Disable selection and editing in view mode
+      canvas.selection = false;
+      canvas.hoverCursor = 'grab';
+      canvas.defaultCursor = 'grab';
+      // Clear any existing selection
+      canvas.discardActiveObject();
+      canvas.renderAll();
+    } else {
+      // Re-enable selection and editing when exiting view mode
+      canvas.selection = true;
+      // Restore cursor based on active tool
+      if (activeTool === 'pan') {
+        canvas.hoverCursor = 'grab';
+        canvas.defaultCursor = 'grab';
+      } else {
+        canvas.hoverCursor = 'default';
+        canvas.defaultCursor = 'default';
+      }
+    }
+  }, [viewMode, activeTool, getCanvas]);
+
   // Initialize canvas
   useEffect(() => {
     if (getCanvas()) return;
@@ -350,6 +378,9 @@ function CanvasEditor() {
 
     // Selection events - detect clicks on elements
     canvas.on('selection:created', (e) => {
+      // Disable selection in view mode
+      if (viewMode) return;
+      
       const activeObjects = canvas.getActiveObjects();
       const isMultiSelect = e.e?.ctrlKey || e.e?.metaKey;
       
@@ -372,6 +403,9 @@ function CanvasEditor() {
     });
 
     canvas.on('selection:updated', (e) => {
+      // Disable selection in view mode
+      if (viewMode) return;
+      
       const activeObjects = canvas.getActiveObjects();
       const isMultiSelect = e.e?.ctrlKey || e.e?.metaKey;
       
@@ -394,6 +428,9 @@ function CanvasEditor() {
     });
 
     canvas.on('selection:cleared', () => {
+      // Disable deselection in view mode
+      if (viewMode) return;
+      
       // Deselect element when clicking on empty area
       const selectedEl = getSelectedElement();
       
@@ -535,6 +572,19 @@ function CanvasEditor() {
     deleteSelectedElement();
   };
 
+  // Handle view mode toggle
+  const handleViewModeToggle = (enabled) => {
+    setViewMode(enabled);
+    // Clear selection when entering view mode
+    if (enabled) {
+      const canvas = getCanvas();
+      if (canvas) {
+        canvas.discardActiveObject();
+        canvas.renderAll();
+      }
+    }
+  };
+
   return (
     <div>
       {/* Canvas Area */}
@@ -549,6 +599,7 @@ function CanvasEditor() {
             left: 0,
             pointerEvents: 'none',
             zIndex: 0,
+            display: viewMode ? 'none' : 'block',
           }} 
         />
         {/* Fabric Canvas */}
@@ -577,17 +628,21 @@ function CanvasEditor() {
           onExportJSON={exportJSON}
           onExportPNG={exportPNG}
           getCanvas={getCanvas}
+          viewMode={viewMode}
+          onViewModeToggle={handleViewModeToggle}
         />
 
         {/* Sidebar */}
-        <Sidebar
-          onAddElement={handleAddElement}
-          collapsed={sidebarCollapsed}
-          onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
-        />
+        {!viewMode && (
+          <Sidebar
+            onAddElement={handleAddElement}
+            collapsed={sidebarCollapsed}
+            onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+          />
+        )}
 
         {/* Properties Panel - muncul otomatis saat element dipilih (hanya untuk single selection) */}
-        {selectedElement && selectedElementIds.length <= 1 && (
+        {!viewMode && selectedElement && selectedElementIds.length <= 1 && (
           <PropertiesPanel
             element={selectedElement}
             onUpdate={handleUpdateProperties}
@@ -596,20 +651,22 @@ function CanvasEditor() {
         )}
 
         {/* Element count indicator */}
-        <div style={{
-          position: 'absolute',
-          bottom: '10px',
-          left: '10px',
-          backgroundColor: 'rgba(15, 23, 42, 0.8)',
-          borderRadius: '6px',
-          padding: '6px 12px',
-          fontSize: '11px',
-          color: '#94a3b8',
-          fontFamily: "'Segoe UI', system-ui, sans-serif",
-          zIndex: 1000,
-        }}>
-          Elements: {elements.length}
-        </div>
+        {!viewMode && (
+          <div style={{
+            position: 'absolute',
+            bottom: '10px',
+            left: '10px',
+            backgroundColor: 'rgba(15, 23, 42, 0.8)',
+            borderRadius: '6px',
+            padding: '6px 12px',
+            fontSize: '11px',
+            color: '#94a3b8',
+            fontFamily: "'Segoe UI', system-ui, sans-serif",
+            zIndex: 1000,
+          }}>
+            Elements: {elements.length}
+          </div>
+        )}
 
         {/* Status Legend */}
         <div style={{
