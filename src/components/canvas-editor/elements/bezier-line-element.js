@@ -679,8 +679,8 @@ export function createBezierLineElement(canvas, options = {}) {
     
     // Default: 2 points forming a straight horizontal line
     options.points = [
-      { x: centerX - 150 + offset, y: centerY + offset },
-      { x: centerX + 150 + offset, y: centerY + offset },
+      { x: centerX - 75 + offset, y: centerY + offset },
+      { x: centerX + 75 + offset, y: centerY + offset },
     ];
   }
   

@@ -58,12 +58,12 @@ export function useCanvasEditor() {
 
     switch (type) {
       case 'polygon':
-        // Default polygon points centered on canvas
+        // Default polygon points centered on canvas (smaller size)
         const defaultPoints = [
-          { x: canvasCenter.x - 100 + offset, y: canvasCenter.y - 100 + offset },
-          { x: canvasCenter.x + 100 + offset, y: canvasCenter.y - 100 + offset },
-          { x: canvasCenter.x + 100 + offset, y: canvasCenter.y + 100 + offset },
-          { x: canvasCenter.x - 100 + offset, y: canvasCenter.y + 100 + offset },
+          { x: canvasCenter.x - 50 + offset, y: canvasCenter.y - 50 + offset },
+          { x: canvasCenter.x + 50 + offset, y: canvasCenter.y - 50 + offset },
+          { x: canvasCenter.x + 50 + offset, y: canvasCenter.y + 50 + offset },
+          { x: canvasCenter.x - 50 + offset, y: canvasCenter.y + 50 + offset },
         ];
 
         element = createPolygonElement(canvas, {
@@ -88,9 +88,9 @@ export function useCanvasEditor() {
       case 'text':
         element = createTextElement(canvas, {
           text: options.text || 'Double click to edit',
-          left: canvasCenter.x - 100 + offset,
+          left: canvasCenter.x - 50 + offset,
           top: canvasCenter.y + offset,
-          fontSize: options.fontSize || 24,
+          fontSize: options.fontSize || 16,
           fontColor: options.fontColor || '#ffffff',
           fontFamily: options.fontFamily || 'Arial',
           fontWeight: options.fontWeight || 'normal',
@@ -209,13 +209,13 @@ export function useCanvasEditor() {
     try {
       const element = await createImageElement(canvas, {
         src: options.src,
-        left: options.left || canvasCenter.x - 100 + offset,
-        top: options.top || canvasCenter.y - 100 + offset,
+        left: options.left || canvasCenter.x - 50 + offset,
+        top: options.top || canvasCenter.y - 50 + offset,
         opacity: options.opacity !== undefined ? options.opacity : 1,
         flipX: options.flipX || false,
         flipY: options.flipY || false,
-        scaleX: options.scaleX || 1,
-        scaleY: options.scaleY || 1,
+        scaleX: options.scaleX || 0.5,
+        scaleY: options.scaleY || 0.5,
         onSelect: (el) => {
           setSelectedElementId(el.id);
         },
