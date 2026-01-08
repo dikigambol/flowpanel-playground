@@ -199,3 +199,15 @@ export const horizontalDividerStyle = {
   marginBottom: '8px',
 };
 
+// Resizable handle styles
+export const resizableHandleStyle = {
+  position: 'absolute',
+  width: '20px',
+  height: '20px',
+  bottom: '0',
+  right: '0',
+  background: 'url("data:image/svg+xml,%3csvg width="6" height="6" xmlns="http://www.w3.org/2000/svg"%3e%3cpath d="m0 6l6-6h-6v6z" fill="%23666"/%3e%3c/svg%3e") no-repeat center',
+  cursor: 'nw-resize',
+  zIndex: 1,
+};
+

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   drawerStyle,
   headerStyle,
@@ -30,6 +30,78 @@ function PropertiesPanel({ element, onUpdate, onDelete }) {
   const [selectedNodeIndex, setSelectedNodeIndex] = useState(null);
   const [segmentCount, setSegmentCount] = useState(0);
   const [selectedControlPointIndex, setSelectedControlPointIndex] = useState(null);
+
+  // Panel state for resizable and draggable
+  const [panelSize, setPanelSize] = useState({ width: 250, height: 450 });
+  const [panelPosition, setPanelPosition] = useState({ x: 20, y: 20 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [isResizing, setIsResizing] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [resizeStart, setResizeStart] = useState({ width: 0, height: 0 });
+
+  const panelRef = useRef(null);
+
+  // Set default position to top-right corner
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setPanelPosition({
+        x: window.innerWidth - panelSize.width - 20,
+        y: 20,
+      });
+    }
+  }, []);
+
+  // Drag handlers
+  const handleMouseDown = (e) => {
+    if (e.target.closest('.properties-header')) {
+      setIsDragging(true);
+      setDragStart({
+        x: e.clientX - panelPosition.x,
+        y: e.clientY - panelPosition.y,
+      });
+      e.preventDefault();
+    }
+  };
+
+  const handleMouseMove = (e) => {
+    if (isDragging) {
+      setPanelPosition({
+        x: e.clientX - dragStart.x,
+        y: e.clientY - dragStart.y,
+      });
+    } else if (isResizing) {
+      const newWidth = Math.max(200, Math.min(400, resizeStart.width + (e.clientX - resizeStart.x)));
+      const newHeight = Math.max(300, Math.min(600, resizeStart.height + (e.clientY - resizeStart.y)));
+      setPanelSize({ width: newWidth, height: newHeight });
+    }
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+    setIsResizing(false);
+  };
+
+  // Resize handlers
+  const handleResizeMouseDown = (e) => {
+    setIsResizing(true);
+    setResizeStart({
+      x: e.clientX,
+      y: e.clientY,
+      width: panelSize.width,
+      height: panelSize.height,
+    });
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  useEffect(() => {
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging, isResizing, dragStart, resizeStart]);
 
   // Sync properties from element
   useEffect(() => {
@@ -120,15 +192,23 @@ function PropertiesPanel({ element, onUpdate, onDelete }) {
   };
 
   return (
-    <div 
+    <div
+      ref={panelRef}
       className="properties-drawer"
       style={{
         ...drawerStyle,
-        transition: 'opacity 0.2s ease, transform 0.2s ease',
+        width: panelSize.width,
+        height: panelSize.height,
+        position: 'absolute',
+        top: panelPosition.y,
+        left: panelPosition.x,
+        transition: isDragging || isResizing ? 'none' : 'opacity 0.2s ease',
+        cursor: isDragging ? 'grabbing' : 'default',
       }}
+      onMouseDown={handleMouseDown}
     >
       {/* Header */}
-      <h1 style={headerStyle}>
+      <h1 className="properties-header" style={{ ...headerStyle, cursor: 'grab' }}>
         {getElementIcon()} {getElementDisplayName()}
       </h1>
 
@@ -235,6 +315,20 @@ function PropertiesPanel({ element, onUpdate, onDelete }) {
           <Trash2 size={16} /> Delete Element
         </button>
       </div>
+
+      {/* Resize handle */}
+      <div
+        style={{
+          position: 'absolute',
+          bottom: 0,
+          right: 0,
+          width: '20px',
+          height: '20px',
+          cursor: 'nw-resize',
+          background: 'url("data:image/svg+xml,%3csvg width="6" height="6" xmlns="http://www.w3.org/2000/svg"%3e%3cpath d="m0 6l6-6h-6v6z" fill="%23666"/%3e%3c/svg%3e") no-repeat center',
+        }}
+        onMouseDown={handleResizeMouseDown}
+      />
     </div>
   );
 }
