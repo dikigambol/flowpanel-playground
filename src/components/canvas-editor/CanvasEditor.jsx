@@ -604,9 +604,97 @@ function CanvasEditor() {
           borderRadius: '6px',
           padding: '6px 12px',
           fontSize: '11px',
-          color: '#94a3b8',          fontFamily: "'Segoe UI', system-ui, sans-serif",          zIndex: 1000,
+          color: '#94a3b8',
+          fontFamily: "'Segoe UI', system-ui, sans-serif",
+          zIndex: 1000,
         }}>
           Elements: {elements.length}
+        </div>
+
+        {/* Status Legend */}
+        <div style={{
+          position: 'absolute',
+          bottom: '10px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          backgroundColor: 'rgba(15, 23, 42, 0.8)',
+          borderRadius: '6px',
+          padding: '8px 12px',
+          fontSize: '10px',
+          color: '#94a3b8',
+          fontFamily: "'Segoe UI', system-ui, sans-serif",
+          zIndex: 1000,
+          display: 'flex',
+          flexDirection: 'row',
+          justifyContent: 'center',
+          alignItems: 'center',
+          gap: '12px',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <div style={{
+              width: '6px',
+              height: '6px',
+              borderRadius: '50%',
+              backgroundColor: '#22c55e',
+              boxShadow: '0 0 4px rgba(34, 197, 94, 0.5)',
+            }}></div>
+            <span>Running</span>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <div style={{
+              width: '6px',
+              height: '6px',
+              borderRadius: '50%',
+              backgroundColor: '#eab308',
+              boxShadow: '0 0 4px rgba(234, 179, 8, 0.5)',
+            }}></div>
+            <span>Off</span>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <div style={{
+              width: '6px',
+              height: '6px',
+              borderRadius: '50%',
+              backgroundColor: '#ef4444',
+              boxShadow: '0 0 4px rgba(239, 68, 68, 0.5)',
+            }}></div>
+            <span>Alarm</span>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <div style={{
+              width: '6px',
+              height: '6px',
+              borderRadius: '50%',
+              backgroundColor: '#3b82f6',
+              boxShadow: '0 0 4px rgba(59, 130, 246, 0.5)',
+            }}></div>
+            <span>Maintenance</span>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <div style={{
+              width: '6px',
+              height: '6px',
+              borderRadius: '50%',
+              backgroundColor: '#000000',
+              boxShadow: '0 0 4px rgba(0, 0, 0, 0.5)',
+            }}></div>
+            <span>Breakdown</span>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <div style={{
+              width: '6px',
+              height: '6px',
+              borderRadius: '50%',
+              backgroundColor: '#6b7280',
+              opacity: 0.7,
+            }}></div>
+            <span>Disconnected</span>
+          </div>
         </div>
       </div>
     </div>

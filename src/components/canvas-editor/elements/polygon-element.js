@@ -310,8 +310,7 @@ export class PolygonElement extends BaseElement {
   _getStatusColors() {
     const statusColors = {
       'running': { fill: '#22c55e', stroke: '#16a34a' }, // hijau
-      'idle': { fill: '#eab308', stroke: '#ca8a04' }, // kuning
-      'off': { fill: '#eab308', stroke: '#ca8a04' }, // kuning (idle/off)
+      'off': { fill: '#eab308', stroke: '#ca8a04' }, // kuning
       'alarm': { fill: '#ef4444', stroke: '#dc2626' }, // merah
       'maintenance': { fill: '#3b82f6', stroke: '#2563eb' }, // biru
       'breakdown': { fill: '#000000', stroke: '#374151' }, // hitam

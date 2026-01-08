@@ -134,8 +134,7 @@ export class BezierLineElement extends BaseElement {
   _getStatusColors() {
     const statusColors = {
       'running': { stroke: '#16a34a' }, // hijau
-      'idle': { stroke: '#ca8a04' }, // kuning
-      'off': { stroke: '#ca8a04' }, // kuning (idle/off)
+      'off': { stroke: '#ca8a04' }, // kuning
       'alarm': { stroke: '#dc2626' }, // merah
       'maintenance': { stroke: '#2563eb' }, // biru
       'breakdown': { stroke: '#374151' }, // hitam

@@ -79,7 +79,6 @@ function BezierLineProperties({ properties, onPropertyChange, editMode, segmentC
           >
             <option value="">Default</option>
             <option value="running">Running</option>
-            <option value="idle">Idle</option>
             <option value="off">Off</option>
             <option value="alarm">Alarm</option>
             <option value="maintenance">Maintenance</option>
