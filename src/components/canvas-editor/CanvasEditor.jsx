@@ -45,6 +45,7 @@ function CanvasEditor() {
   const [zoomLevel, setZoomLevel] = useState(1);
   const [activeTool, setActiveTool] = useState('select');
   const [viewMode, setViewMode] = useState(false);
+  const [previousTool, setPreviousTool] = useState('select'); // Store previous tool when entering view mode
 
   const activeToolRef = useRef(activeTool);
   activeToolRef.current = activeTool;
@@ -651,7 +652,17 @@ function CanvasEditor() {
 
   // Handle view mode toggle
   const handleViewModeToggle = (enabled) => {
+    if (enabled) {
+      // Entering view mode - switch to pan tool
+      setPreviousTool(activeTool); // Save current tool
+      setActiveTool('pan');
+    } else {
+      // Exiting view mode - restore previous tool
+      setActiveTool(previousTool);
+    }
+    
     setViewMode(enabled);
+    
     // Clear selection when entering view mode
     if (enabled) {
       const canvas = getCanvas();
