@@ -33,22 +33,40 @@ function PropertiesPanel({ element, onUpdate, onDelete }) {
 
   // Panel state for resizable and draggable
   const [panelSize, setPanelSize] = useState({ width: 220, height: 380 });
-  const [panelPosition, setPanelPosition] = useState({ x: 20, y: 20 });
+  const [panelPosition, setPanelPosition] = useState(() => {
+    // Set initial position to top-right corner immediately
+    if (typeof window !== 'undefined') {
+      return {
+        x: window.innerWidth - 220 - 40,  // width - panelSize.width - margin
+        y: 70,
+      };
+    }
+    return { x: 20, y: 20 }; // fallback
+  });
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [resizeStart, setResizeStart] = useState({ width: 0, height: 0 });
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   const panelRef = useRef(null);
 
-  // Set default position to top-right corner (more to the left)
+  // Update position on window resize
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setPanelPosition({
-        x: window.innerWidth - panelSize.width - 40,  // More margin from right edge
-        y: 70,
-      });
-    }
+    const handleResize = () => {
+      setPanelPosition(prev => ({
+        x: Math.min(prev.x, window.innerWidth - panelSize.width - 40),
+        y: Math.min(prev.y, window.innerHeight - panelSize.height - 40),
+      }));
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [panelSize]);
+
+  // Mark initial load as complete after first render
+  useEffect(() => {
+    setIsInitialLoad(false);
   }, []);
 
   // Drag handlers
@@ -202,7 +220,7 @@ function PropertiesPanel({ element, onUpdate, onDelete }) {
         position: 'absolute',
         top: panelPosition.y,
         left: panelPosition.x,
-        transition: isDragging || isResizing ? 'none' : 'opacity 0.2s ease',
+        transition: (isDragging || isResizing || isInitialLoad) ? 'none' : 'all 0.3s ease-out',
         cursor: isDragging ? 'grabbing' : 'default',
       }}
       onMouseDown={handleMouseDown}

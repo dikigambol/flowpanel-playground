@@ -140,7 +140,7 @@ export function useCanvasEditor() {
       case 'bezierLine':
         element = createBezierLineElement(canvas, {
           strokeColor: options.strokeColor || '#22c55e',
-          strokeWidth: options.strokeWidth || 3,
+          strokeWidth: options.strokeWidth || 5,
           centerX: canvasCenter.x,
           centerY: canvasCenter.y,
           offset: offset,
