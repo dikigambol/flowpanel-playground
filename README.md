@@ -51,6 +51,19 @@ Canvas Editor yang fleksibel untuk membuat dan mengedit desain visual dengan kom
 - **Selection**: Single dan multiple selection dengan Shift+click
 - **Grouping**: Group/ungroup elemen untuk manajemen yang lebih baik
 
+### 👁️ View Mode & Presentation
+- **View Mode Toggle**: Switch ke mode presentasi dengan navigasi saja
+- **Auto Pan Tool**: Otomatis switch ke pan tool saat view mode aktif
+- **Disabled Editing**: Semua drag, resize, select operations disabled
+- **Clean UI**: Sidebar dan properties panel disembunyikan untuk presentasi
+- **Navigation Focus**: Hanya pan navigation untuk smooth presentation
+
+### 📊 Status Monitoring System
+- **Color-coded Status**: 6 status dengan indikator warna (Running=🟢, Off=🟡, Alarm=🔴, dll.)
+- **Status Legend**: Panel legend yang selalu visible untuk referensi
+- **Element Status**: Setiap elemen dapat diberi status untuk visual monitoring
+- **Real-time Indicators**: Status berubah secara real-time di canvas
+
 ### ⚙️ Properties Editing
 - **Real-time Updates**: Perubahan properti langsung terlihat di canvas
 - **Dynamic Properties Panel**: Panel properti yang adaptif berdasarkan tipe elemen
@@ -61,6 +74,8 @@ Canvas Editor yang fleksibel untuk membuat dan mengedit desain visual dengan kom
 - `H`: Pan tool
 - `Delete/Backspace`: Hapus elemen yang dipilih
 - `Space + Drag`: Pan canvas
+- `Ctrl+G`: Group selected elements
+- `Ctrl+Shift+G`: Ungroup selected elements
 
 ## 🚀 Instalasi
 
@@ -129,6 +144,27 @@ Canvas Editor yang fleksibel untuk membuat dan mengedit desain visual dengan kom
 
 - **Select Tool (V)**: Default tool untuk select dan edit elemen
 - **Pan Tool (H)**: Tool untuk navigasi canvas tanpa select elemen
+
+### View Mode & Presentation
+
+1. **Aktifkan View Mode**: Klik checkbox "View" di floating toolbar
+2. **Auto Pan Tool**: Aplikasi otomatis switch ke pan tool saat view mode aktif
+3. **Navigation Only**: Hanya bisa pan navigation, semua editing disabled
+4. **Clean Interface**: Sidebar dan properties panel otomatis disembunyikan
+5. **Exit View Mode**: Uncheck "View" untuk kembali ke editing mode
+
+### Status Monitoring
+
+1. **Set Element Status**: Pilih elemen dan ubah status di properties panel
+2. **Status Types**:
+   - 🟢 **Running**: Normal operation
+   - 🟡 **Off**: Element turned off
+   - 🔴 **Alarm**: Error or warning condition
+   - 🔵 **Maintenance**: Under maintenance
+   - ⚫ **Breakdown**: Failed or broken
+   - ⚪ **Disconnected**: No connection
+3. **Status Legend**: Panel legend di kanan bawah selalu menampilkan referensi warna
+4. **Visual Indicators**: Border elemen berubah warna sesuai status
 
 ## 🏗️ Struktur Proyek
 
@@ -212,6 +248,20 @@ npm run lint         # Jalankan ESLint
 - **CanvasEditor**: Komponen utama dengan canvas dan controls
 - **Sidebar**: Menu collapsible untuk add elemen
 - **PropertiesPanel**: Panel dinamis untuk edit properti
+- **FloatingToolbar**: Toolbar adaptif dengan mode editing/view
+- **StatusLegend**: Panel legend untuk status monitoring
+
+### View Mode System
+- **Mode Toggle**: Switch antara editing dan presentation mode
+- **UI Adaptation**: Components hide/show berdasarkan mode
+- **Interaction Control**: Disable editing saat view mode aktif
+- **Auto Tool Switch**: Otomatis ke pan tool saat view mode
+
+### Status Monitoring
+- **Color Coding**: 6 status dengan warna berbeda untuk visual monitoring
+- **Element Properties**: Status sebagai properti elemen
+- **Legend System**: Reference panel untuk status interpretation
+- **Real-time Updates**: Status berubah langsung di canvas
 - **FloatingToolbar**: Controls cepat untuk canvas operations
 
 ### Design Patterns
@@ -257,6 +307,9 @@ npm run lint         # Jalankan ESLint
 - Keyboard shortcuts
 - File upload untuk images
 - Group/ungroup functionality
+- **View Mode & Presentation**: Navigation-only mode dengan disabled editing
+- **Status Monitoring System**: Color-coded status dengan legend panel
+- **Responsive UI**: Adaptive toolbar dan conditional component rendering
 
 ### 🔄 In Development
 - Symbol library untuk machine diagrams

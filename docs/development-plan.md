@@ -17,6 +17,9 @@ Aplikasi ini dikembangkan menjadi **Canvas Editor** yang fleksibel, di mana peng
 - **Fitur Canvas**: Pan/zoom, grid overlay, fit view, selection handling, keyboard shortcuts.
 - **Element Management**: Add, select, update, delete, group/ungroup elemen.
 - **Base Architecture**: Class-based element system dengan BaseElement sebagai abstract class.
+- **View Mode**: Mode presentasi dengan navigasi pan-only, semua editing disabled.
+- **Status Visualization**: Color-coded status legend untuk monitoring (Running, Off, Alarm, Maintenance, Breakdown, Disconnected).
+- **Responsive UI**: Toolbar yang adaptif berdasarkan mode editing/view.
 
 ## Arsitektur yang Diimplementasi
 
@@ -186,17 +189,43 @@ export class BaseElement {
 - **Real-time Update**: Perubahan langsung terlihat di canvas.
 - **Validation**: Validasi input (misal min 3 nodes untuk polygon).
 - **Specific Properties**:
-  - Polygon: Fill color, stroke color, stroke width, nodes editing
-  - Text: Font family, size, color, alignment, bold/italic
-  - Image: Scale, position, opacity
-  - BezierLine: Control points, stroke properties
+  - Polygon: Fill color, stroke color, stroke width, nodes editing, status
+  - Text: Font family, size, color, alignment, bold/italic, status
+  - Image: Scale, position, opacity, status
+  - BezierLine: Control points, stroke properties, status
+
+### View Mode & Presentation Features
+- **View Mode Toggle**: Checkbox di toolbar untuk switch mode.
+- **Auto Tool Switch**: Otomatis ke pan tool saat view mode aktif.
+- **Disabled Interactions**: Drag, resize, select, modify semua disabled.
+- **UI Cleanup**: Sidebar, properties panel, element count disembunyikan.
+- **Navigation Focus**: Hanya pan navigation untuk presentasi smooth.
+
+### Status Monitoring System
+- **Status Types**: Running (green), Off (yellow), Alarm (red), Maintenance (blue), Breakdown (black), Disconnected (gray).
+- **Visual Indicators**: Color dots pada legend dan element borders.
+- **Status Assignment**: Setiap elemen dapat diberi status via properties.
+- **Legend Panel**: Status reference yang selalu visible saat view mode.
 
 ### Canvas Features
 - **Zoom/Pan**: Mouse wheel zoom, space+drag pan.
 - **Grid**: Toggle on/off, adaptive grid spacing.
-- **Fit View**: Zoom to fit all elemen.
+- **Fit View**: Zoom to fit all elemen dengan bounding box calculation yang akurat.
 - **Snap to Grid**: Optional snapping saat drag (ongoing).
 - **Keyboard Shortcuts**: V (select), H (pan), Delete (remove).
+
+### View Mode & Presentation
+- **View Mode Toggle**: Switch antara editing mode dan presentation mode.
+- **Auto Pan Tool**: Saat view mode aktif, otomatis switch ke pan tool.
+- **Disabled Editing**: Semua drag, resize, select, dan modify operations disabled.
+- **UI Simplification**: Sidebar, properties panel, dan toolbar collapse disembunyikan.
+- **Navigation Only**: Hanya pan navigation yang diperbolehkan untuk presentasi.
+
+### Status Visualization
+- **Color-coded Status**: 6 status dengan warna berbeda (Running=green, Off=yellow, Alarm=red, dll.).
+- **Status Legend**: Legend panel yang selalu visible untuk referensi status.
+- **Element Status**: Setiap elemen dapat diberi status untuk monitoring visual.
+- **Real-time Updates**: Status dapat diubah melalui properties panel.
 
 ### Tools dan Controls
 - **Active Tool**: Select, pan modes.
@@ -209,18 +238,26 @@ export class BaseElement {
 - **Multiple Objects**: Manage multiple Fabric objects dalam satu canvas.
 - **Event Handling**: Handle selection, drag, dll. untuk multiple elemen.
 - **Performance**: Optimasi untuk banyak elemen dengan selective rendering.
+- **View Mode**: Disable semua editing interactions sambil preserve pan navigation.
 
 ### 2. State Synchronization
 - **React State ↔ Fabric Objects**: Sync properties antara React state dan Fabric objects.
 - **Avoid Re-renders**: Gunakan refs untuk Fabric objects dan callbacks.
+- **Mode Transitions**: Smooth transition antara editing dan view mode.
 
 ### 3. Component Architecture
 - **Modular Elemen**: Design interface yang konsisten untuk semua elemen types.
 - **Dynamic Properties**: Properties panel yang adaptif berdasarkan elemen type.
+- **Status System**: Color-coded status dengan legend dan element indicators.
 
 ### 4. ID Management
 - **Unique IDs**: Generate UUID untuk setiap elemen.
 - **Reference Management**: Map ID ke Fabric object dan sebaliknya.
+
+### 5. UI State Management
+- **View Mode Logic**: Conditional rendering berdasarkan editing/view mode.
+- **Toolbar Adaptation**: Toolbar yang berubah berdasarkan mode aktif.
+- **Responsive Layout**: UI components yang hide/show sesuai konteks.
 
 ### 1. Fabric.js Integration
 - **Multiple Objects**: Manage multiple Fabric objects dalam satu canvas.
@@ -272,6 +309,18 @@ export class BaseElement {
 - Grid overlay dengan toggle
 - Fit view functionality
 - Keyboard shortcuts
+
+### Phase 8: View Mode & Presentation ✅
+- View mode toggle dengan auto pan tool switch
+- Disabled editing interactions (drag, resize, select)
+- UI simplification (hide sidebar, properties, toolbar collapse)
+- Navigation-only mode untuk presentasi
+
+### Phase 9: Status Monitoring System ✅
+- Color-coded status system (6 status types)
+- Status legend panel
+- Element status assignment
+- Visual status indicators pada elements
 
 ## Testing Strategy
 - **Unit Tests**: Test functions untuk add/update/delete elemen (planned).
