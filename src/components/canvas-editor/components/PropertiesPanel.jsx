@@ -11,7 +11,7 @@ import PolygonProperties from './PolygonProperties';
 import TextProperties from './TextProperties';
 import ImageProperties from './ImageProperties';
 import LineProperties from './LineProperties';
-import { Square, Type, Image, Zap, Minus, Trash2, ChevronUp, ChevronDown } from 'lucide-react';
+import { Square, Type, Image, Zap, Minus, Trash2, ChevronUp, ChevronDown, Grip } from 'lucide-react';
 
 /**
  * PropertiesPanel - Panel untuk mengedit properties elemen yang dipilih
@@ -41,12 +41,12 @@ function PropertiesPanel({ element, onUpdate, onDelete }) {
 
   const panelRef = useRef(null);
 
-  // Set default position to top-right corner
+  // Set default position to top-right corner (more to the left)
   useEffect(() => {
     if (typeof window !== 'undefined') {
       setPanelPosition({
-        x: window.innerWidth - panelSize.width - 20,
-        y: 20,
+        x: window.innerWidth - panelSize.width - 40,  // More margin from right edge
+        y: 10,
       });
     }
   }, []);
@@ -208,9 +208,26 @@ function PropertiesPanel({ element, onUpdate, onDelete }) {
       onMouseDown={handleMouseDown}
     >
       {/* Header */}
-      <h1 className="properties-header" style={{ ...headerStyle, cursor: 'grab' }}>
-        {getElementIcon()} {getElementDisplayName()}
-      </h1>
+      <div 
+        className="properties-header" 
+        style={{ 
+          ...headerStyle, 
+          cursor: 'grab',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          paddingTop: '0px', // Reduced top padding
+          marginTop: '-5px',
+          paddingBottom: '10px',
+          marginBottom: '8px',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {getElementIcon()} 
+          <span>{getElementDisplayName()}</span>
+        </div>
+        <Grip size={16} style={{ color: '#94a3b8', opacity: 0.6 }} />
+      </div>
 
       {/* Properties based on type */}
       {element.type === 'polygon' && (

@@ -42,7 +42,7 @@ export const drawerStyle = {
 
 export const sidebarStyle = {
   position: 'absolute',
-  top: '15px',
+  top: '12px',
   left: '20px',
   width: '33px',
   backgroundColor: '#ffffffff',
