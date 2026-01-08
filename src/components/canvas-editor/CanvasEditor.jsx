@@ -130,32 +130,52 @@ function CanvasEditor() {
     const objects = canvas.getObjects();
     if (objects.length === 0) return;
 
-    // Calculate bounding box of all objects
+    // Get actual container dimensions
+    const container = canvasContainerRef.current;
+    if (!container) return;
+
+    const containerWidth = container.clientWidth;
+    const containerHeight = container.clientHeight;
+
+    // Calculate bounding box of all objects in absolute coordinates
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
     objects.forEach(obj => {
-      const bounds = obj.getBoundingRect();
+      // Get object bounds including transformations
+      obj.setCoords(); // Update coordinates
+      const bounds = obj.getBoundingRect(true); // true = absolute coordinates
+
       minX = Math.min(minX, bounds.left);
       minY = Math.min(minY, bounds.top);
       maxX = Math.max(maxX, bounds.left + bounds.width);
       maxY = Math.max(maxY, bounds.top + bounds.height);
     });
 
-    if (minX === Infinity) return;
+    if (minX === Infinity || maxX === -Infinity) return;
 
     const width = maxX - minX;
     const height = maxY - minY;
-    const centerX = (minX + maxX) / 2;
-    const centerY = (minY + maxY) / 2;
+    const centerX = minX + width / 2;
+    const centerY = minY + height / 2;
 
-    const canvasWidth = canvas.width;
-    const canvasHeight = canvas.height;
-    const zoomX = canvasWidth / width;
-    const zoomY = canvasHeight / height;
-    const zoom = Math.min(zoomX, zoomY) * 0.8;
+    // Calculate zoom to fit all objects with some padding
+    const padding = 20; // pixels
+    const zoomX = (containerWidth - padding * 2) / width;
+    const zoomY = (containerHeight - padding * 2) / height;
+    const zoom = Math.min(zoomX, zoomY);
 
-    canvas.setZoom(Math.max(0.1, Math.min(3, zoom)));
-    canvas.absolutePan({ x: centerX * zoom - canvasWidth / 2, y: centerY * zoom - canvasHeight / 2 });
-    setZoomLevel(canvas.getZoom());
+    // Limit zoom between reasonable bounds
+    const finalZoom = Math.max(0.1, Math.min(3, zoom));
+
+    // Set zoom first
+    canvas.setZoom(finalZoom);
+
+    // Then pan to center the objects
+    const panX = centerX * finalZoom - containerWidth / 2;
+    const panY = centerY * finalZoom - containerHeight / 2;
+
+    canvas.absolutePan({ x: panX, y: panY });
+
+    setZoomLevel(finalZoom);
     drawGrid();
     canvas.requestRenderAll();
   }, [getCanvas, drawGrid]);
@@ -320,16 +340,40 @@ function CanvasEditor() {
     if (!canvas) return;
 
     if (viewMode) {
-      // Disable selection and editing in view mode
+      // Disable all editing interactions in view mode
       canvas.selection = false;
       canvas.hoverCursor = 'grab';
       canvas.defaultCursor = 'grab';
+
+      // Disable object interactions
+      canvas.forEachObject(obj => {
+        obj.selectable = false;
+        obj.evented = false;
+        obj.lockMovementX = true;
+        obj.lockMovementY = true;
+        obj.lockScalingX = true;
+        obj.lockScalingY = true;
+        obj.lockRotation = true;
+      });
+
       // Clear any existing selection
       canvas.discardActiveObject();
       canvas.renderAll();
     } else {
-      // Re-enable selection and editing when exiting view mode
+      // Re-enable all editing interactions when exiting view mode
       canvas.selection = true;
+
+      // Re-enable object interactions
+      canvas.forEachObject(obj => {
+        obj.selectable = true;
+        obj.evented = true;
+        obj.lockMovementX = false;
+        obj.lockMovementY = false;
+        obj.lockScalingX = false;
+        obj.lockScalingY = false;
+        obj.lockRotation = false;
+      });
+
       // Restore cursor based on active tool
       if (activeTool === 'pan') {
         canvas.hoverCursor = 'grab';
@@ -449,6 +493,33 @@ function CanvasEditor() {
       selectElement(null);
     });
 
+    // Prevent object modification in view mode
+    canvas.on('object:moving', (e) => {
+      if (viewMode) {
+        e.target.left = e.target._originalLeft || e.target.left;
+        e.target.top = e.target._originalTop || e.target.top;
+        e.target.setCoords();
+        canvas.renderAll();
+      }
+    });
+
+    canvas.on('object:scaling', (e) => {
+      if (viewMode) {
+        e.target.scaleX = e.target._originalScaleX || 1;
+        e.target.scaleY = e.target._originalScaleY || 1;
+        e.target.setCoords();
+        canvas.renderAll();
+      }
+    });
+
+    canvas.on('object:rotating', (e) => {
+      if (viewMode) {
+        e.target.angle = e.target._originalAngle || 0;
+        e.target.setCoords();
+        canvas.renderAll();
+      }
+    });
+
     // Double-click to add node in edit mode or finish bezier line drawing
     canvas.on('mouse:dblclick', (opt) => {
       // Check if bezier line is in drawing mode
@@ -489,15 +560,21 @@ function CanvasEditor() {
 
     // Pan functionality
     canvas.on('mouse:down', (opt) => {
-      if (activeToolRef.current !== 'pan') {
+      // Store original object properties when starting interaction (for undo in view mode)
+      if (opt.target && !viewMode) {
+        opt.target._originalLeft = opt.target.left;
+        opt.target._originalTop = opt.target.top;
+        opt.target._originalScaleX = opt.target.scaleX;
+        opt.target._originalScaleY = opt.target.scaleY;
+        opt.target._originalAngle = opt.target.angle;
+      }
+
+      // Only allow pan when pan tool is active and not clicking on objects (or in view mode)
+      if (activeToolRef.current !== 'pan' || (opt.target && !viewMode)) {
         isDraggingRef.current = false;
         return;
       }
-      if (opt.target) {
-        isDraggingRef.current = false;
-        return;
-      }
-      
+
       const evt = opt.e;
       isDraggingRef.current = true;
       lastPosRef.current = { x: evt.clientX, y: evt.clientY };
